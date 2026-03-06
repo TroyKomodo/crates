@@ -53,13 +53,3 @@ changelog_update = false
 name = "tinc-proc-macro"
 version_group = "tinc"
 changelog_update = false
-
-[[package]]
-name = "tinc-integration-tests"
-release = false
-changelog_update = false
-
-[[package]]
-name = "workspace-hack"
-release = false
-changelog_update = false

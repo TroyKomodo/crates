@@ -2793,7 +2793,7 @@ mod tests {
         // Build a simple map: {1: "x", 2: "y"}
         let map_val = CelValue::Map(Arc::from(vec![(1i32.conv(), "x".conv()), (2i32.conv(), "y".conv())]));
 
-        let outputs = vec![
+        let outputs = [
             format!("{}", CelValue::Bool(false)),
             format!("{}", 42i32.conv()),
             format!("{}", "foo".conv()),
