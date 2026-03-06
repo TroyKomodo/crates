@@ -4,6 +4,7 @@ pr_labels = ["release"]
 publish_timeout = "10m"
 repo_url = "https://github.com/troykomodo/crates"
 semver_check = true
+pr_branch_prefix = "release-pr"
 
 [changelog]
 body = """
