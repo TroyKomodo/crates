@@ -1,0 +1,69 @@
+name: Release PR
+
+on:
+  schedule:
+    - cron: "30 10 * * 1"
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  S3_ENDPOINT: "6ca7d4e3d5c9496083876496fc36b8b0.r2.cloudflarestorage.com"
+  S3_BUCKET: "troy-crates-ci"
+  PUBLIC_S3_ACCESS_KEY: "b93e0986c42bc88d2d85dc087f2a94ba"
+  PUBLIC_S3_SECRET_KEY: "60bc5cfd8b121d0acb35d829755b587d29fd8da212c5a81fc4df3be0f433282e"
+
+concurrency:
+  group: release-pr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-pr:
+    name: Release PR
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'TroyKomodo' }}
+    permissions:
+      contents: write
+      pull-requests: write
+    defaults:
+      run:
+        shell: bash -c ". $GITHUB_WORKSPACE/.github/scripts/nix-shell.sh {0}"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup environment
+        uses: ./.github/actions/ci-setup
+        with:
+          shell: *shell
+          nix_cache_private_key: ${{ secrets.NIX_CACHE_PRIVATE_KEY }}
+          s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
+          s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
+          sccache_enabled: "false"
+
+      - name: Publish crates
+        run: release-plz update > /tmp/release-body.txt
+
+      - name: Sync README
+        run: just sync-readme
+
+      - name: Format
+        run: just fmt
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create PR
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          title: "chore: release"
+          commit-message: "chore: release"
+          body-path: /tmp/release-body.txt
+          branch: release-pr
+          labels: release
