@@ -1,3 +1,5 @@
+#![allow(clippy::test_attr_in_doctest)]
+
 //! A crate which allows you to compile Rust code at runtime (hence the name
 //! `postcompile`).
 //!
@@ -745,6 +747,7 @@ macro_rules! config {
 /// #     ($expr:expr) => { $expr };
 /// # }
 /// let output = postcompile::compile!({
+///     #[allow(dead_code)]
 ///     const TEST: u32 = 1;
 /// });
 /// # eprintln!("output: {:#?}", output);
@@ -768,6 +771,7 @@ macro_rules! config {
 ///         test: true
 ///     },
 ///     {
+///         #[allow(dead_code)]
 ///         const TEST: u32 = 1;
 ///
 ///         #[test]
@@ -826,6 +830,7 @@ macro_rules! compile_str {
 ///
 /// ```rust
 /// let output = postcompile::try_compile!({
+///     #[allow(dead_code)]
 ///     const TEST: u32 = 1;
 /// });
 /// # eprintln!("output: {:#?}", output);

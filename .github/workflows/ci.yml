@@ -34,7 +34,7 @@ jobs:
           nix_cache_private_key: ${{ secrets.NIX_CACHE_PRIVATE_KEY }}
           s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
           s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
-          sccache_enabled: "false"
+          sccache_enabled: 'false'
 
       - name: Check formatting
         run: just fmt
@@ -59,7 +59,7 @@ jobs:
           nix_cache_private_key: ${{ secrets.NIX_CACHE_PRIVATE_KEY }}
           s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
           s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
-          sccache_enabled: "true"
+          sccache_enabled: 'true'
 
       - name: Run clippy
         run: cargo clippy --all-targets --all-features
@@ -81,7 +81,7 @@ jobs:
           nix_cache_private_key: ${{ secrets.NIX_CACHE_PRIVATE_KEY }}
           s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
           s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
-          sccache_enabled: "true"
+          sccache_enabled: 'true'
 
       - name: Run tests
         run: just test
@@ -103,7 +103,7 @@ jobs:
           nix_cache_private_key: ${{ secrets.NIX_CACHE_PRIVATE_KEY }}
           s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
           s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
-          sccache_enabled: "true"
+          sccache_enabled: 'true'
 
       - name: Check documentation
         run: just doc
