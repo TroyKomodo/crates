@@ -40,7 +40,7 @@ jobs:
           s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
           sccache_enabled: "false"
 
-      - name: Publish crates
+      - name: Update crates
         run: release-plz update > /tmp/release-body.txt
 
       - name: Sync README

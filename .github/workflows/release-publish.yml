@@ -40,5 +40,8 @@ jobs:
           s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
           sccache_enabled: "false"
 
-      - name: Publish crates
+      - name: Release crates
+        env:
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: release-plz release
