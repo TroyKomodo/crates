@@ -46,6 +46,28 @@ jobs:
       - name: Check for changes
         run: git diff --exit-code
 
+  sync-readme:
+    name: Sync README
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: *shell
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup environment
+        uses: ./.github/actions/ci-setup
+        with:
+          shell: *shell
+          nix_cache_private_key: ${{ secrets.NIX_CACHE_PRIVATE_KEY }}
+          s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
+          s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
+          sccache_enabled: "true"
+
+      - name: Sync README
+        run: just sync-readme-test
+
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
@@ -89,6 +111,21 @@ jobs:
 
       - name: Run tests
         run: just test
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: lcov.info
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: target/nextest/**/junit.xml
+          report_type: test_results
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   doc:
     name: Documentation

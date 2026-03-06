@@ -8,6 +8,7 @@ pub fn create(package: &Package) -> String {
         version,
         license,
         metadata,
+        repository,
         ..
     } = &package;
 
@@ -40,13 +41,18 @@ pub fn create(package: &Package) -> String {
         badges.push(format!("![Crates.io Downloads](https://img.shields.io/crates/dv/{name}/{version}.svg?&label=downloads&style={badge_style})"));
     }
 
-    match &metadata.badges.codecov {
-        Codecov::Simple(false) => {}
-        Codecov::Simple(true) => {
-            badges.push(format!("[![Codecov](https://img.shields.io/codecov/c/github/scufflecloud/scuffle.svg?label=codecov&logo=codecov&style={badge_style})](https://app.codecov.io/gh/scufflecloud/scuffle)"))
+    let repository = repository.as_ref().and_then(|r| r.strip_prefix("https://github.com/"));
+
+    match (&metadata.badges.codecov, repository) {
+        (Codecov::Simple(false), _) => {}
+        (Codecov::Simple(true), Some(repository)) => {
+            badges.push(format!("[![Codecov](https://img.shields.io/codecov/c/github/{repository}.svg?label=codecov&logo=codecov&style={badge_style})](https://app.codecov.io/gh/{repository})"))
         }
-        Codecov::Complex { component } => {
-            badges.push(format!("[![Codecov](https://img.shields.io/codecov/c/github/scufflecloud/scuffle.svg?label=codecov&logo=codecov&style={badge_style}&component={component})](https://app.codecov.io/gh/scufflecloud/scuffle)"))
+        (Codecov::Complex { component }, Some(repository)) => {
+            badges.push(format!("[![Codecov](https://img.shields.io/codecov/c/github/{repository}.svg?label=codecov&logo=codecov&style={badge_style}&component={component})](https://app.codecov.io/gh/{repository})"))
+        },
+        _ => {
+            eprintln!("codecov badge currently only supported for github repositories");
         }
     }
 

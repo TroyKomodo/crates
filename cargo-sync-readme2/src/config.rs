@@ -109,6 +109,7 @@ impl Default for Codecov {
 pub struct Package {
     pub name: String,
     pub version: String,
+    pub repository: Option<String>,
     pub license: Option<String>,
     pub metadata: Metadata,
     pub rustdoc_json: Utf8PathBuf,

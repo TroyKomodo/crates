@@ -142,6 +142,7 @@ fn load_package(cargo_toml: &Utf8PathBuf, rustdoc_json: Utf8PathBuf) -> anyhow::
         name: pkg.name.clone(),
         license: pkg.license().map(|l| l.to_owned()),
         version: pkg.version().to_owned(),
+        repository: pkg.repository().map(|r| r.to_string()),
         rustdoc_json,
         metadata: pkg.metadata.clone().unwrap_or_default().sync_readme,
     })
