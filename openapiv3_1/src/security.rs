@@ -257,7 +257,9 @@ impl Http {
 #[cfg_attr(feature = "debug", derive(Debug))]
 #[serde(rename_all = "lowercase")]
 #[allow(missing_docs)]
+#[derive(Default)]
 pub enum HttpAuthScheme {
+    #[default]
     Basic,
     Bearer,
     Digest,
@@ -272,11 +274,6 @@ pub enum HttpAuthScheme {
     Vapid,
 }
 
-impl Default for HttpAuthScheme {
-    fn default() -> Self {
-        Self::Basic
-    }
-}
 
 /// Open id connect [`SecurityScheme`].
 #[non_exhaustive]

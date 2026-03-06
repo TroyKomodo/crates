@@ -747,6 +747,7 @@ macro_rules! config {
 /// let output = postcompile::compile!({
 ///     const TEST: u32 = 1;
 /// });
+/// # eprintln!("output: {:#?}", output);
 ///
 /// assert_eq!(output.status, postcompile::ExitStatus::Success);
 /// // We dont have an assert_snapshot! macro in this crate, but you get the idea.
@@ -775,6 +776,7 @@ macro_rules! config {
 ///         }
 ///     }
 /// );
+/// # eprintln!("output: {:#?}", output);
 ///
 /// assert_eq!(output.status, postcompile::ExitStatus::Success);
 /// // We dont have an assert_snapshot! macro in this crate, but you get the idea.
@@ -803,6 +805,7 @@ macro_rules! compile {
 ///
 /// ```rust,standalone_crate
 /// let output = postcompile::compile_str!(include_str!("some_file.rs"));
+/// # eprintln!("output: {:#?}", output);
 ///
 /// // ... do something with the output
 /// ```
@@ -825,6 +828,7 @@ macro_rules! compile_str {
 /// let output = postcompile::try_compile!({
 ///     const TEST: u32 = 1;
 /// });
+/// # eprintln!("output: {:#?}", output);
 ///
 /// assert!(output.is_ok());
 /// assert_eq!(output.unwrap().status, postcompile::ExitStatus::Success);

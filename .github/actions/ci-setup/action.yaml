@@ -12,7 +12,11 @@ inputs:
   s3_secret_key:
     required: false
     description: Secret key for S3 bucket
-  
+
+  sccache_enabled:
+    required: true
+    description: Whether to enable sccache
+
   shell:
     required: true
     description: "Shell to use"
@@ -62,6 +66,7 @@ runs:
           post-build-hook = ${{ github.workspace }}/.github/scripts/nix-post-build-hook.sh
 
     - name: Setup sccache
+      if: inputs.sccache_enabled == 'true'
       uses: ./.github/actions/setup-sccache
       with:
         shell: ${{ inputs.shell }}

@@ -2,4 +2,4 @@
 set -f # disable globbing
 export IFS=' '
 
-echo "${OUT_PATHS}" >> /tmp/nix-built-paths.txt
+echo "${OUT_PATHS}" >>/tmp/nix-built-paths.txt

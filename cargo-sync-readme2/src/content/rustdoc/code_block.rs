@@ -18,9 +18,7 @@ pub(super) fn convert<'a, 'b>(events: impl IntoIterator<Item = Event<'a>> + 'b) 
                                 let trimmed = line.trim();
                                 if trimmed.starts_with("##") {
                                     Some(Cow::Owned(line.replacen("##", "#", 1)))
-                                } else if trimmed.starts_with("# ") {
-                                    None
-                                } else if trimmed == "#" {
+                                } else if trimmed.starts_with("# ") || trimmed == "#" {
                                     None
                                 } else {
                                     Some(Cow::Borrowed(line))

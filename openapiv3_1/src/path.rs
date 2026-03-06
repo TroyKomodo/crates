@@ -645,10 +645,12 @@ impl Parameter {
 #[derive(Serialize, Deserialize, PartialEq, Eq, Clone)]
 #[serde(rename_all = "lowercase")]
 #[cfg_attr(feature = "debug", derive(Debug))]
+#[derive(Default)]
 pub enum ParameterIn {
     /// Declares that parameter is used as query parameter.
     Query,
     /// Declares that parameter is used as path parameter.
+    #[default]
     Path,
     /// Declares that parameter is used as header value.
     Header,
@@ -656,11 +658,6 @@ pub enum ParameterIn {
     Cookie,
 }
 
-impl Default for ParameterIn {
-    fn default() -> Self {
-        Self::Path
-    }
-}
 
 /// Defines how [`Parameter`] should be serialized.
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]

@@ -22,3 +22,8 @@ runs:
         set -xeo pipefail
         sccache --start-server
         sccache -z
+
+    - name: Show sccache stats
+      uses: gacts/run-and-post-run@v1
+      with:
+        post: ${{ inputs.shell }} sccache -s

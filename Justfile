@@ -14,17 +14,29 @@ lint:
 deny:
     cargo deny check
 
+alias t := test
+
 test:
-    RUSTC_BOOTSTRAP=1 INSTA_FORCE_PASS=1 cargo llvm-cov --no-report nextest
-    RUSTC_BOOTSTRAP=1 INSTA_FORCE_PASS=1 cargo llvm-cov --no-report --doc
-    RUSTC_BOOTSTRAP=1 INSTA_FORCE_PASS=1 cargo llvm-cov report --doctests --lcov --output-path lcov.info
-    cargo insta review
+    #!/usr/bin/env bash
+    set -eo pipefail
+    export RUSTC_BOOTSTRAP=1
+    ci="${CI:-0}"
+    [[ "$ci" == "0" ]] && export INSTA_FORCE_PASS=1
 
-check:
-    cargo check --all-targets --all-features
+    test_exit_code=0
+    doc_exit_code=0
 
-build:
-    cargo build --all-targets --all-features
+    cargo llvm-cov --no-report nextest || test_exit_code=$?
+    cargo llvm-cov --no-report --doc || doc_exit_code=$?
+    cargo llvm-cov report --doctests --lcov --output-path lcov.info
+
+    if [[ "$ci" == "0" ]]; then
+        cargo insta review
+    fi
+
+    if [[ "$test_exit_code" != "0" || "$doc_exit_code" != "0" ]]; then
+        exit 1
+    fi
 
 doc:
     cargo doc --all-features --no-deps

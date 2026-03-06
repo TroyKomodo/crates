@@ -71,7 +71,7 @@ pub fn render(readme: &str, content: &Content) -> anyhow::Result<String> {
             let close_match = CLOSE_MARKER_REGEX
                 .find(&readme[end..])
                 .context("marker opens but never closes")?;
-            end = end + close_match.end();
+            end += close_match.end();
             skip_until = end;
         }
 
