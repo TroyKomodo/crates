@@ -22,6 +22,7 @@ jobs:
     name: Release publish
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'TroyKomodo' }}
+    environment: crates publish
     permissions:
       contents: write
     defaults:
