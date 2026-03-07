@@ -1,0 +1,12 @@
+---
+source: tinc-integration-tests/src/optional_fields.rs
+expression: message
+---
+{
+  "inner": {
+    "name": "test",
+    "value": 42
+  },
+  "items": [],
+  "map_items": {}
+}

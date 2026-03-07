@@ -1,0 +1,555 @@
+---
+source: tinc-integration-tests/src/advanced_service.rs
+expression: svc.openapi_schema()
+---
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "",
+    "version": ""
+  },
+  "paths": {
+    "/api/v1/users": {
+      "get": {
+        "tags": [
+          "AdvancedService"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "maximum": 2147483647.0,
+                  "minimum": 1.0,
+                  "type": "integer"
+                }
+              ]
+            },
+            "style": "deepObject",
+            "explode": true
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "maximum": 100.0,
+                  "minimum": 1.0,
+                  "type": "integer"
+                }
+              ]
+            },
+            "style": "deepObject",
+            "explode": true
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "style": "deepObject",
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/advanced_service.ListUsersResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdvancedService"
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/advanced_service.CreateUserResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/advanced_service.CreateUserRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{user_id}": {
+      "get": {
+        "tags": [
+          "AdvancedService"
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/advanced_service.GetUserResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AdvancedService"
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/advanced_service.UpdateUserResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "email": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "format": "email"
+                      }
+                    ]
+                  },
+                  "display_name": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "maxLength": 50,
+                        "type": "string"
+                      }
+                    ]
+                  }
+                },
+                "title": "advanced_service.UpdateUserRequest",
+                "type": "object",
+                "unevaluatedProperties": false
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AdvancedService"
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/advanced_service.DeleteUserResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "AdvancedService"
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/advanced_service.UpdateUserResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "email": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "format": "email"
+                      }
+                    ]
+                  },
+                  "display_name": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "maxLength": 50,
+                        "type": "string"
+                      }
+                    ]
+                  }
+                },
+                "title": "advanced_service.UpdateUserRequest",
+                "type": "object",
+                "unevaluatedProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{user_id}/avatar": {
+      "get": {
+        "tags": [
+          "AdvancedService"
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "contentEncoding": "binary"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdvancedService"
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/advanced_service.UploadAvatarResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "maxLength": 5242880,
+                "minLength": 1,
+                "type": "string",
+                "contentEncoding": "binary"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "advanced_service.CreateUserRequest": {
+        "properties": {
+          "username": {
+            "maxLength": 20,
+            "minLength": 3,
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "display_name": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "maxLength": 50,
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "username",
+          "email"
+        ],
+        "title": "advanced_service.CreateUserRequest",
+        "type": "object",
+        "unevaluatedProperties": false
+      },
+      "advanced_service.CreateUserResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "username",
+          "email"
+        ],
+        "title": "advanced_service.CreateUserResponse",
+        "type": "object",
+        "unevaluatedProperties": false
+      },
+      "advanced_service.GetUserResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "display_name": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "user_id",
+          "username",
+          "email"
+        ],
+        "title": "advanced_service.GetUserResponse",
+        "type": "object",
+        "unevaluatedProperties": false
+      },
+      "advanced_service.UpdateUserResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "display_name": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "user_id",
+          "username",
+          "email"
+        ],
+        "title": "advanced_service.UpdateUserResponse",
+        "type": "object",
+        "unevaluatedProperties": false
+      },
+      "advanced_service.DeleteUserResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ],
+        "title": "advanced_service.DeleteUserResponse",
+        "type": "object",
+        "unevaluatedProperties": false
+      },
+      "advanced_service.ListUsersResponse": {
+        "properties": {
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/advanced_service.GetUserResponse"
+            },
+            "type": "array"
+          },
+          "total_count": {
+            "maximum": 2147483647.0,
+            "minimum": -2147483648.0,
+            "type": "integer"
+          },
+          "page": {
+            "maximum": 2147483647.0,
+            "minimum": -2147483648.0,
+            "type": "integer"
+          },
+          "page_size": {
+            "maximum": 2147483647.0,
+            "minimum": -2147483648.0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "users",
+          "total_count",
+          "page",
+          "page_size"
+        ],
+        "title": "advanced_service.ListUsersResponse",
+        "type": "object",
+        "unevaluatedProperties": false
+      },
+      "advanced_service.UploadAvatarResponse": {
+        "properties": {
+          "avatar_url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "avatar_url"
+        ],
+        "title": "advanced_service.UploadAvatarResponse",
+        "type": "object",
+        "unevaluatedProperties": false
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "AdvancedService",
+      "description": ""
+    }
+  ]
+}

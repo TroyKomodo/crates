@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package message_cel;
+
+import "tinc/annotations.proto";
+
+message PasswordChange {
+  option (tinc.message).generate = true;
+  option (tinc.message).cel = {
+    message: "new_password must be different from old_password"
+    expression: "input.new_password != input.old_password"
+  };
+  option (tinc.message).cel = {
+    message: "confirm_password must match new_password"
+    expression: "input.new_password == input.confirm_password"
+  };
+
+  string old_password = 1 [(tinc.field).constraint.string = {min_len: 8}];
+  string new_password = 2 [(tinc.field).constraint.string = {
+    min_len: 8
+    max_len: 128
+  }];
+  string confirm_password = 3;
+}
+
+message DateRange {
+  option (tinc.message).generate = true;
+  option (tinc.message).cel = {
+    message: "end_date must be after start_date"
+    expression: "input.end_year > input.start_year || (input.end_year == input.start_year && input.end_month > input.start_month) || (input.end_year == input.start_year && input.end_month == input.start_month && input.end_day >= input.start_day)"
+  };
+
+  int32 start_year = 1 [(tinc.field).constraint.int32 = {
+    gte: 1900
+    lte: 2100
+  }];
+  int32 start_month = 2 [(tinc.field).constraint.int32 = {
+    gte: 1
+    lte: 12
+  }];
+  int32 start_day = 3 [(tinc.field).constraint.int32 = {
+    gte: 1
+    lte: 31
+  }];
+
+  int32 end_year = 4 [(tinc.field).constraint.int32 = {
+    gte: 1900
+    lte: 2100
+  }];
+  int32 end_month = 5 [(tinc.field).constraint.int32 = {
+    gte: 1
+    lte: 12
+  }];
+  int32 end_day = 6 [(tinc.field).constraint.int32 = {
+    gte: 1
+    lte: 31
+  }];
+}
+
+message ConditionalRequired {
+  option (tinc.message).generate = true;
+  option (tinc.message).cel = {
+    message: "phone_number is required when contact_method is 'phone'"
+    expression: "input.contact_method != 'phone' || input.phone_number.size() > 0"
+  };
+  option (tinc.message).cel = {
+    message: "email is required when contact_method is 'email'"
+    expression: "input.contact_method != 'email' || input.email.size() > 0"
+  };
+
+  string contact_method = 1 [(tinc.field).constraint.string = {
+    in: ["phone", "email", "mail"]
+  }];
+  string phone_number = 2;
+  string email = 3;
+}
+
+message AtLeastOneOf {
+  option (tinc.message).generate = true;
+  option (tinc.message).cel = {
+    message: "at least one of username, email, or phone must be provided"
+    expression: "input.username.size() > 0 || input.email.size() > 0 || input.phone.size() > 0"
+  };
+
+  string username = 1;
+  string email = 2;
+  string phone = 3;
+}
+
+message MutuallyExclusive {
+  option (tinc.message).generate = true;
+  option (tinc.message).cel = {
+    message: "only one of credit_card, bank_account, or paypal can be provided"
+    expression: "(input.credit_card.size() > 0 ? 1 : 0) + (input.bank_account.size() > 0 ? 1 : 0) + (input.paypal.size() > 0 ? 1 : 0) <= 1"
+  };
+
+  string credit_card = 1;
+  string bank_account = 2;
+  string paypal = 3;
+}

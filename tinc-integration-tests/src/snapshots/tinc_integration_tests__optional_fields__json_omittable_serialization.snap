@@ -1,0 +1,10 @@
+---
+source: tinc-integration-tests/src/optional_fields.rs
+expression: message
+---
+{
+  "required_field": "required",
+  "omittable_false": "",
+  "omittable_true_but_serialize": "",
+  "optional_default": null
+}

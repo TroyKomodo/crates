@@ -1,0 +1,15 @@
+---
+source: tinc-integration-tests/src/optional_fields.rs
+expression: message
+---
+{
+  "opt_string": null,
+  "opt_int32": null,
+  "opt_int64": null,
+  "opt_uint32": null,
+  "opt_uint64": null,
+  "opt_float": null,
+  "opt_double": null,
+  "opt_bool": null,
+  "opt_bytes": null
+}

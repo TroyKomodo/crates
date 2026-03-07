@@ -1,0 +1,16 @@
+---
+source: tinc-integration-tests/src/optional_fields.rs
+expression: state
+---
+TrackerSharedState {
+    fail_fast: false,
+    errors: [
+        TrackedError {
+            kind: InvalidField {
+                message: "value must be greater than or equal to `0`",
+            },
+            fatal: true,
+            path: "opt_int32",
+        },
+    ],
+}

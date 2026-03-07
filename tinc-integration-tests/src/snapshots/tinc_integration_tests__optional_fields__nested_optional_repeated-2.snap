@@ -1,0 +1,18 @@
+---
+source: tinc-integration-tests/src/optional_fields.rs
+expression: message
+---
+{
+  "inner": null,
+  "items": [
+    {
+      "name": "first",
+      "value": null
+    },
+    {
+      "name": "second",
+      "value": 10
+    }
+  ],
+  "map_items": {}
+}

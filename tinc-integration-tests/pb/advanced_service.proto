@@ -1,0 +1,135 @@
+syntax = "proto3";
+
+package advanced_service;
+
+import "tinc/annotations.proto";
+
+service AdvancedService {
+  option (tinc.service).prefix = "/api/v1";
+
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
+    option (tinc.method).endpoint = {post: "/users"};
+  }
+
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {
+    option (tinc.method).endpoint = {get: "/users/{user_id}"};
+  }
+
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse) {
+    option (tinc.method).endpoint = {put: "/users/{user_id}"};
+    option (tinc.method).endpoint = {patch: "/users/{user_id}"};
+  }
+
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {
+    option (tinc.method).endpoint = {delete: "/users/{user_id}"};
+  }
+
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
+    option (tinc.method).endpoint = {
+      get: "/users"
+      request: {query: {}}
+    };
+  }
+
+  rpc UploadAvatar(UploadAvatarRequest) returns (UploadAvatarResponse) {
+    option (tinc.method).endpoint = {
+      post: "/users/{user_id}/avatar"
+      request: {binary: {field: "data", content_type_field: "content_type"}}
+    };
+  }
+
+  rpc DownloadAvatar(DownloadAvatarRequest) returns (DownloadAvatarResponse) {
+    option (tinc.method).endpoint = {
+      get: "/users/{user_id}/avatar"
+      response: {binary: {field: "data", content_type_field: "content_type"}}
+    };
+  }
+}
+
+message CreateUserRequest {
+  string username = 1 [(tinc.field).constraint.string = {
+    min_len: 3
+    max_len: 20
+    match: "^[a-z][a-z0-9_]*$"
+  }];
+  string email = 2 [(tinc.field).constraint.string = {email: true}];
+  optional string display_name = 3 [(tinc.field).constraint.string = {max_len: 50}];
+}
+
+message CreateUserResponse {
+  string user_id = 1;
+  string username = 2;
+  string email = 3;
+}
+
+message GetUserRequest {
+  string user_id = 1 [(tinc.field).constraint.string = {uuid: true}];
+}
+
+message GetUserResponse {
+  string user_id = 1;
+  string username = 2;
+  string email = 3;
+  optional string display_name = 4;
+}
+
+message UpdateUserRequest {
+  string user_id = 1 [(tinc.field).constraint.string = {uuid: true}];
+  optional string email = 2 [(tinc.field).constraint.string = {email: true}];
+  optional string display_name = 3 [(tinc.field).constraint.string = {max_len: 50}];
+}
+
+message UpdateUserResponse {
+  string user_id = 1;
+  string username = 2;
+  string email = 3;
+  optional string display_name = 4;
+}
+
+message DeleteUserRequest {
+  string user_id = 1 [(tinc.field).constraint.string = {uuid: true}];
+}
+
+message DeleteUserResponse {
+  bool success = 1;
+}
+
+message ListUsersRequest {
+  optional int32 page = 1 [(tinc.field).constraint.int32 = {gte: 1}];
+  optional int32 page_size = 2 [(tinc.field).constraint.int32 = {
+    gte: 1
+    lte: 100
+  }];
+  optional string filter = 3;
+}
+
+message ListUsersResponse {
+  repeated GetUserResponse users = 1;
+  int32 total_count = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message UploadAvatarRequest {
+  string user_id = 1 [(tinc.field).constraint.string = {uuid: true}];
+  bytes data = 2 [(tinc.field).constraint.bytes = {
+    min_len: 1
+    max_len: 5242880
+  }];
+  string content_type = 3 [(tinc.field).constraint.string = {
+    in: ["image/png", "image/jpeg", "image/gif", "image/webp"]
+  }];
+}
+
+message UploadAvatarResponse {
+  string avatar_url = 1;
+}
+
+message DownloadAvatarRequest {
+  string user_id = 1 [(tinc.field).constraint.string = {uuid: true}];
+}
+
+message DownloadAvatarResponse {
+  bytes data = 1;
+  string content_type = 2;
+}
