@@ -1,0 +1,15 @@
+---
+source: tinc-integration-tests/src/optional_fields.rs
+expression: message
+---
+{
+  "opt_string": "hello",
+  "opt_int32": 42,
+  "opt_int64": 100,
+  "opt_uint32": 200,
+  "opt_uint64": 300,
+  "opt_float": 0.5,
+  "opt_double": 1.5,
+  "opt_bool": true,
+  "opt_bytes": "aGVsbG8="
+}

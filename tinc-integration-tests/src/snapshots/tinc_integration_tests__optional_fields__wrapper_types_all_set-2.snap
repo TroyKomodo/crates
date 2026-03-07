@@ -1,0 +1,15 @@
+---
+source: tinc-integration-tests/src/optional_fields.rs
+expression: message
+---
+{
+  "string_value": "wrapped",
+  "int32_value": 42,
+  "int64_value": 100,
+  "uint32_value": 200,
+  "uint64_value": 300,
+  "float_value": 3.14,
+  "double_value": 2.718,
+  "bool_value": true,
+  "bytes_value": "d29ybGQ="
+}

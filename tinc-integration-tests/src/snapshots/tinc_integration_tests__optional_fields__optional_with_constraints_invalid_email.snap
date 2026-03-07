@@ -1,0 +1,16 @@
+---
+source: tinc-integration-tests/src/optional_fields.rs
+expression: state
+---
+TrackerSharedState {
+    fail_fast: false,
+    errors: [
+        TrackedError {
+            kind: InvalidField {
+                message: "value must be a valid email address",
+            },
+            fatal: true,
+            path: "email",
+        },
+    ],
+}

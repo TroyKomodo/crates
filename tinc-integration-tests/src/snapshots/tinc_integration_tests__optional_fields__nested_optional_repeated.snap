@@ -1,0 +1,14 @@
+---
+source: tinc-integration-tests/src/optional_fields.rs
+expression: state
+---
+TrackerSharedState {
+    fail_fast: false,
+    errors: [
+        TrackedError {
+            kind: MissingField,
+            fatal: true,
+            path: "map_items",
+        },
+    ],
+}

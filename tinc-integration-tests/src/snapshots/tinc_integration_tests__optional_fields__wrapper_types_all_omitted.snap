@@ -1,0 +1,54 @@
+---
+source: tinc-integration-tests/src/optional_fields.rs
+expression: state
+---
+TrackerSharedState {
+    fail_fast: false,
+    errors: [
+        TrackedError {
+            kind: MissingField,
+            fatal: true,
+            path: "string_value",
+        },
+        TrackedError {
+            kind: MissingField,
+            fatal: true,
+            path: "int32_value",
+        },
+        TrackedError {
+            kind: MissingField,
+            fatal: true,
+            path: "int64_value",
+        },
+        TrackedError {
+            kind: MissingField,
+            fatal: true,
+            path: "uint32_value",
+        },
+        TrackedError {
+            kind: MissingField,
+            fatal: true,
+            path: "uint64_value",
+        },
+        TrackedError {
+            kind: MissingField,
+            fatal: true,
+            path: "float_value",
+        },
+        TrackedError {
+            kind: MissingField,
+            fatal: true,
+            path: "double_value",
+        },
+        TrackedError {
+            kind: MissingField,
+            fatal: true,
+            path: "bool_value",
+        },
+        TrackedError {
+            kind: MissingField,
+            fatal: true,
+            path: "bytes_value",
+        },
+    ],
+}

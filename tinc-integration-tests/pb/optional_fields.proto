@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package optional_fields;
+
+import "google/protobuf/wrappers.proto";
+import "tinc/annotations.proto";
+
+message OptionalPrimitives {
+  option (tinc.message).generate = true;
+
+  optional string opt_string = 1 [(tinc.field).constraint.string = {min_len: 1}];
+  optional int32 opt_int32 = 2 [(tinc.field).constraint.int32 = {gte: 0}];
+  optional int64 opt_int64 = 3;
+  optional uint32 opt_uint32 = 4;
+  optional uint64 opt_uint64 = 5;
+  optional float opt_float = 6 [(tinc.field).constraint.float = {
+    gte: 0.0
+    lte: 1.0
+  }];
+  optional double opt_double = 7;
+  optional bool opt_bool = 8;
+  optional bytes opt_bytes = 9;
+}
+
+message WrapperTypes {
+  option (tinc.message).generate = true;
+
+  google.protobuf.StringValue string_value = 1;
+  google.protobuf.Int32Value int32_value = 2;
+  google.protobuf.Int64Value int64_value = 3;
+  google.protobuf.UInt32Value uint32_value = 4;
+  google.protobuf.UInt64Value uint64_value = 5;
+  google.protobuf.FloatValue float_value = 6;
+  google.protobuf.DoubleValue double_value = 7;
+  google.protobuf.BoolValue bool_value = 8;
+  google.protobuf.BytesValue bytes_value = 9;
+}
+
+message JsonOmittableOptions {
+  option (tinc.message).generate = true;
+
+  string required_field = 1;
+
+  string omittable_true = 2 [(tinc.field).json_omittable = TRUE];
+
+  string omittable_false = 3 [(tinc.field).json_omittable = FALSE];
+
+  string omittable_true_but_serialize = 4 [(tinc.field).json_omittable = TRUE_BUT_STILL_SERIALIZE];
+
+  optional string optional_default = 5;
+
+  optional string optional_omittable_true = 6 [(tinc.field).json_omittable = TRUE];
+}
+
+message NestedOptional {
+  option (tinc.message).generate = true;
+
+  message Inner {
+    string name = 1 [(tinc.field).constraint.string = {min_len: 1}];
+    optional int32 value = 2;
+  }
+
+  optional Inner inner = 1;
+  repeated Inner items = 2;
+  map<string, Inner> map_items = 3;
+}
+
+message OptionalWithConstraints {
+  option (tinc.message).generate = true;
+
+  optional string email = 1 [(tinc.field).constraint.string = {email: true}];
+
+  optional string uuid = 2 [(tinc.field).constraint.string = {uuid: true}];
+
+  optional string ipv4 = 3 [(tinc.field).constraint.string = {ipv4: true}];
+
+  optional int32 positive = 4 [(tinc.field).constraint.int32 = {gt: 0}];
+
+  optional float percentage = 5 [(tinc.field).constraint.float = {
+    gte: 0.0
+    lte: 100.0
+  }];
+}

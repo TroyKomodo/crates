@@ -1,0 +1,19 @@
+---
+source: tinc-integration-tests/src/optional_fields.rs
+expression: state
+---
+TrackerSharedState {
+    fail_fast: false,
+    errors: [
+        TrackedError {
+            kind: MissingField,
+            fatal: true,
+            path: "required_field",
+        },
+        TrackedError {
+            kind: MissingField,
+            fatal: true,
+            path: "omittable_false",
+        },
+    ],
+}

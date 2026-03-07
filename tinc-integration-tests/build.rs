@@ -31,6 +31,11 @@ fn main() {
                     "pb/bytes_service.proto",
                     "pb/expressions.proto",
                     "pb/floats.proto",
+                    "pb/bool_expressions.proto",
+                    "pb/sfixed_sint.proto",
+                    "pb/advanced_service.proto",
+                    "pb/message_cel.proto",
+                    "pb/optional_fields.proto",
                 ],
                 &["pb"],
             )

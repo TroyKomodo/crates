@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package bool_expressions;
+
+import "tinc/annotations.proto";
+
+message BoolExpressions {
+  option (tinc.message).generate = true;
+
+  bool must_be_true = 1 [(tinc.field).constraint = {
+    cel: {
+      message: "value must be true"
+      expression: "input == true"
+    }
+  }];
+
+  bool must_be_false = 2 [(tinc.field).constraint = {
+    cel: {
+      message: "value must be false"
+      expression: "input == false"
+    }
+  }];
+
+  optional bool optional_bool = 3;
+
+  repeated bool bool_list = 4 [(tinc.field).constraint.repeated = {
+    min_len: 1
+    max_len: 5
+  }];
+}
+
+message BoolWithDefaults {
+  option (tinc.message).generate = true;
+
+  bool enabled = 1 [(tinc.field).json_omittable = TRUE];
+  bool disabled = 2 [(tinc.field).json_omittable = TRUE];
+  bool required_bool = 3;
+}
