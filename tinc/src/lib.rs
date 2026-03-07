@@ -218,7 +218,7 @@
 //!
 //! `SPDX-License-Identifier: MIT OR Apache-2.0`
 #![cfg_attr(all(coverage_nightly, test), feature(coverage_attribute))]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(missing_docs)]
 #![deny(unreachable_pub)]
 // TODO: Can't enable this because of the path attribute on private below.
