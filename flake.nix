@@ -44,9 +44,15 @@
               llvmPackages.clang
               miniserve
               release-plz
+              lcov
             ];
 
-            RUSTC_WRAPPER = "${pkgs.sccache}/bin/sccache";
+            # RUSTC_WRAPPER = "${pkgs.sccache}/bin/sccache";
+
+            shellHook = ''
+              mkdir -p "$PWD/.cache"
+              export SCCACHE_SERVER_UDS="$PWD/.cache/sccache.sock"
+            '';
           };
 
         formatter = alejandra.defaultPackage.${system};
