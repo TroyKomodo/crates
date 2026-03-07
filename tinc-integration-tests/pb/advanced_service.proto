@@ -27,21 +27,33 @@ service AdvancedService {
   rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
     option (tinc.method).endpoint = {
       get: "/users"
-      request: {query: {}}
+      request: {
+        query: {}
+      }
     };
   }
 
   rpc UploadAvatar(UploadAvatarRequest) returns (UploadAvatarResponse) {
     option (tinc.method).endpoint = {
       post: "/users/{user_id}/avatar"
-      request: {binary: {field: "data", content_type_field: "content_type"}}
+      request: {
+        binary: {
+          field: "data"
+          content_type_field: "content_type"
+        }
+      }
     };
   }
 
   rpc DownloadAvatar(DownloadAvatarRequest) returns (DownloadAvatarResponse) {
     option (tinc.method).endpoint = {
       get: "/users/{user_id}/avatar"
-      response: {binary: {field: "data", content_type_field: "content_type"}}
+      response: {
+        binary: {
+          field: "data"
+          content_type_field: "content_type"
+        }
+      }
     };
   }
 }
@@ -117,7 +129,12 @@ message UploadAvatarRequest {
     max_len: 5242880
   }];
   string content_type = 3 [(tinc.field).constraint.string = {
-    in: ["image/png", "image/jpeg", "image/gif", "image/webp"]
+    in: [
+      "image/png",
+      "image/jpeg",
+      "image/gif",
+      "image/webp"
+    ]
   }];
 }
 

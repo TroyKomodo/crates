@@ -47,7 +47,7 @@
               lcov
             ];
 
-            # RUSTC_WRAPPER = "${pkgs.sccache}/bin/sccache";
+            RUSTC_WRAPPER = "${pkgs.sccache}/bin/sccache";
 
             shellHook = ''
               mkdir -p "$PWD/.cache"

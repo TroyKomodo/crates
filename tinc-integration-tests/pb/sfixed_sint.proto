@@ -12,25 +12,25 @@ message SFixedSIntExpressions {
     lte: 100
   }];
 
-  sfixed64 sfixed64_field = 2 [(tinc.field).constraint.int64 = {
-    gt: 0
-  }];
+  sfixed64 sfixed64_field = 2 [(tinc.field).constraint.int64 = {gt: 0}];
 
   sint32 sint32_field = 3 [(tinc.field).constraint.int32 = {
-    in: [-10, -5, 0, 5, 10]
+    in: [
+      -10,
+      -5,
+      0,
+      5,
+      10
+    ]
   }];
 
   sint64 sint64_field = 4 [(tinc.field).constraint.int64 = {
     not_in: [0]
   }];
 
-  fixed32 fixed32_field = 5 [(tinc.field).constraint.uint32 = {
-    gte: 100
-  }];
+  fixed32 fixed32_field = 5 [(tinc.field).constraint.uint32 = {gte: 100}];
 
-  fixed64 fixed64_field = 6 [(tinc.field).constraint.uint64 = {
-    lt: 1000
-  }];
+  fixed64 fixed64_field = 6 [(tinc.field).constraint.uint64 = {lt: 1000}];
 }
 
 message RepeatedFixedTypes {
@@ -43,7 +43,5 @@ message RepeatedFixedTypes {
     }
   }];
 
-  repeated fixed64 fixed64_list = 2 [(tinc.field).constraint.repeated = {
-    max_len: 3
-  }];
+  repeated fixed64 fixed64_list = 2 [(tinc.field).constraint.repeated = {max_len: 3}];
 }
