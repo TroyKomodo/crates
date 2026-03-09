@@ -44,7 +44,7 @@ jobs:
           s3_bucket: ${{ vars.S3_CACHE_BUCKET }}
           s3_endpoint: ${{ vars.S3_CACHE_ENDPOINT }}
           sccache_command: ${{ github.workspace }}/.github/scripts/nix-shell.sh sccache
-          
+
       - name: Update crates
         run: release-plz update > ${{ runner.temp }}/release-body.txt
 
