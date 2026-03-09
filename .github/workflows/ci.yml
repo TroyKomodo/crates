@@ -23,14 +23,14 @@ jobs:
       contents: read
     defaults: &defaults
       run:
-        shell: ${{ github.workspace }}/.github/scripts/nix-shell.sh {0}
+        shell: ${{ github.workspace }}/.github/scripts/nix-shell.sh bash -e {0}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
       - &setup-nix
         name: Setup environment
-        uses: troymoder/shared-actions/setup-nix@0445b4839de516226e314213dcb15fe4461109c3
+        uses: troymoder/shared-actions/setup-nix@3f0cff7eef25ca0fb3b1e7b624b0745a99c9234a
         with:
           nix_cache_private_key: ${{ secrets.NIX_CACHE_PRIVATE_KEY }}
           nix_cache_public_key: ${{ vars.NIX_CACHE_PUBLIC_KEY }}
@@ -38,11 +38,11 @@ jobs:
           s3_endpoint: ${{ vars.S3_CACHE_ENDPOINT }}
           s3_public_url: ${{ vars.S3_CACHE_PUBLIC_URL }}
           s3_access_key: ${{ secrets.S3_CACHE_BUCKET_ACCESS_KEY || vars.S3_CACHE_BUCKET_PUBLIC_ACCESS_KEY }}
-          s3_secret_key: ${{ secrets.S3_CACHE_BUCKET_ACCESS_SECRET_KEY || vars.S3_CACHE_BUCKET_PUBLIC_ACCESS_SECRET_KEY }}
+          s3_secret_access_key: ${{ secrets.S3_CACHE_BUCKET_SECRET_ACCESS_KEY || vars.S3_CACHE_BUCKET_PUBLIC_SECRET_ACCESS_KEY }}
 
       - &setup-sccache
         name: Setup sccache
-        uses: troymoder/shared-actions/setup-sccache@0445b4839de516226e314213dcb15fe4461109c3
+        uses: troymoder/shared-actions/setup-sccache@3f0cff7eef25ca0fb3b1e7b624b0745a99c9234a
         with:
           s3_bucket: ${{ vars.S3_CACHE_BUCKET }}
           s3_endpoint: ${{ vars.S3_CACHE_ENDPOINT }}
