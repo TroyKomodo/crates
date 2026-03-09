@@ -20,7 +20,7 @@ jobs:
   release-pr:
     name: Release PR
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == 'TroyKomodo' }}
+    if: ${{ github.repository_owner == 'troymoder' }}
     permissions:
       contents: write
       pull-requests: write
