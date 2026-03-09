@@ -25,6 +25,8 @@ jobs:
   fmt:
     name: Format
     runs-on: ubuntu-latest
+    permissions: &read-permissions
+      contents: read
     defaults:
       run:
         shell: &shell bash -c ". $GITHUB_WORKSPACE/.github/scripts/nix-shell.sh {0}"
@@ -50,6 +52,7 @@ jobs:
   sync-readme:
     name: Sync README
     runs-on: ubuntu-latest
+    permissions: *read-permissions
     defaults:
       run:
         shell: *shell
@@ -72,6 +75,7 @@ jobs:
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
+    permissions: *read-permissions
     defaults:
       run:
         shell: *shell
@@ -94,6 +98,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    permissions: *read-permissions
     defaults:
       run:
         shell: *shell
@@ -131,6 +136,7 @@ jobs:
   doc:
     name: Documentation
     runs-on: ubuntu-latest
+    permissions: *read-permissions
     defaults:
       run:
         shell: *shell
@@ -153,6 +159,7 @@ jobs:
   status:
     name: Status
     runs-on: ubuntu-latest
+    permissions: *read-permissions
     needs: [fmt, sync-readme, clippy, test, doc]
     if: ${{ !cancelled() }}
     steps:
