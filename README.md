@@ -3,7 +3,8 @@
 ![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-purple.svg?style=flat-square)
 [![Codecov](https://img.shields.io/codecov/c/github/troymoder/crates.svg?label=codecov&logo=codecov&style=flat-square)](https://app.codecov.io/gh/troymoder/crates)
 
-A collection of my open source Rust crates. PRs are welcome!
+A collection of my open source Rust crates. PRs are welcome, if they are not automatically created by a machine.
+All PRs must be submitted by human.
 
 | Crate                                      | Description                                              |
 | ------------------------------------------ | -------------------------------------------------------- |
