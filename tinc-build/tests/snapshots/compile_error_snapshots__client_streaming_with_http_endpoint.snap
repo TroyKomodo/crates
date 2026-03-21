@@ -1,0 +1,5 @@
+---
+source: tinc-build/tests/compile_error_snapshots.rs
+expression: err
+---
+failed to generate tonic fds

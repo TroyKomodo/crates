@@ -1,0 +1,19 @@
+---
+description: Rust workspace context, verification, and edit style for troymoder/crates
+alwaysApply: true
+---
+
+# Crates workspace
+
+Rust **2024** workspace at repo root; members are top-level crate directories in `Cargo.toml`. Human-submitted PRs only (see README).
+
+## Verify before you finish
+
+From the repo root, run checks **via the flake dev shell**: `nix develop --command …` (not bare `cargo` / `just` on the host). Examples: `nix develop --command just fmt`, `nix develop --command just test`, `nix develop --command just doc`, `nix develop --command just sync-readme-test`, and for clippy with CI’s warning policy: `nix develop --command env RUSTFLAGS=-Dwarnings RUSTDOCFLAGS=-Dwarnings cargo clippy --all-targets --all-features`. If Nix cannot run, fall back to plain `cargo` / locally installed tools and note the gap.
+
+## Editing
+
+- Before changing a crate, read the `#![deny(…)]` (and related inner attributes) at the top of that crate’s `src/lib.rs` so new code respects its policy (`missing_docs`, `unsafe_code`, `unreachable_pub`, clippy denies, etc.).
+- Minimal, task-scoped diffs; no unrelated cleanup or reformatting.
+- Match existing patterns in the files you touch (types, errors, module layout).
+- Avoid obvious comments, `// region` / fold markers, and heavy doc comments on trivial code.

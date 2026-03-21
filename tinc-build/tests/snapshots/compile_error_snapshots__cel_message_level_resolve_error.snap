@@ -1,0 +1,5 @@
+---
+source: tinc-build/tests/compile_error_snapshots.rs
+expression: err
+---
+message-level cel expression failed: member access error on type Proto(Value(Message(ProtoPath("error_states.cel.MessageCelResolve")))): message error_states.cel.MessageCelResolve does not have field no_such_field

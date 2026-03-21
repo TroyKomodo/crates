@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package error_states.cel;
+
+import "tinc/annotations.proto";
+
+message MessageCelParse {
+  string x = 1;
+  option (tinc.message).cel = {
+    expression: "("
+    message: "invalid cel"
+  };
+}

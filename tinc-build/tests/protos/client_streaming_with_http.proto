@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package error_states.streaming;
+
+import "tinc/annotations.proto";
+
+service StreamService {
+  rpc StreamEcho(stream StreamRequest) returns (StreamResponse) {
+    option (tinc.method).endpoint = {get: "/stream"};
+  }
+}
+
+message StreamRequest {
+  string chunk = 1;
+}
+
+message StreamResponse {
+  string done = 1;
+}

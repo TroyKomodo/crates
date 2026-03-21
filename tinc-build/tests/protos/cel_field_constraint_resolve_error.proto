@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package error_states.cel;
+
+import "tinc/annotations.proto";
+
+message FieldCelResolve {
+  string x = 1 [(tinc.field).constraint = {
+    cel: [
+      {
+        expression: "undefined_identifier"
+        message: "bad ref"
+      }
+    ]
+  }];
+}

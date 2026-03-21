@@ -52,6 +52,7 @@ workspace-hack = { version = "0.1", path = "../workspace-hack" }
 [dev-dependencies]
 insta = "1"
 postcompile = { path = "../postcompile" }
+tempfile = "3"
 
 [package.metadata.docs.rs]
 all-features = true

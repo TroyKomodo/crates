@@ -6,6 +6,8 @@
 A collection of my open source Rust crates. PRs are welcome, if they are not automatically created by a machine.
 All PRs must be submitted by human.
 
+Notes for automated coding agents: [AGENTS.md](./AGENTS.md).
+
 | Crate                                      | Description                                              |
 | ------------------------------------------ | -------------------------------------------------------- |
 | [tinc](./tinc)                             | gRPC to REST transcoding library                         |
