@@ -12,7 +12,9 @@ use super::{RefOr, Schema};
 /// [`Content`] implements OpenAPI spec [Media Type Object][media_type]
 ///
 /// [media_type]: <https://spec.openapis.org/oas/latest.html#media-type-object>
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Default, Clone, PartialEq, bon::Builder)]
+#[derive(
+    serde_derive::Serialize, serde_derive::Deserialize, Default, Clone, PartialEq, bon::Builder,
+)]
 #[cfg_attr(feature = "debug", derive(Debug))]
 #[builder(on(_, into))]
 #[non_exhaustive]

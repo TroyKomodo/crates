@@ -4,7 +4,8 @@ use prost_types::FileDescriptorSet;
 fn main() {
     println!("cargo:rerun-if-changed=./annotations.proto");
 
-    let descriptor_out = std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap()).join("tinc.annotations.pb");
+    let descriptor_out =
+        std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap()).join("tinc.annotations.pb");
 
     if let Ok(pre_compiled_fd) = std::env::var("TINC_COMPILED_FD") {
         let data = std::fs::read(pre_compiled_fd).unwrap();

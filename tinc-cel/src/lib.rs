@@ -44,9 +44,7 @@ pub enum CelError<'a> {
         value: CelValue<'a>,
     },
     #[error("number out of range when performing {op}")]
-    NumberOutOfRange {
-        op: &'static str,
-    },
+    NumberOutOfRange { op: &'static str },
     #[error("bad access when trying to member {member} on {container}")]
     BadAccess {
         member: CelValue<'a>,
@@ -186,7 +184,10 @@ impl PartialOrd for CelValue<'_> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         match (self, other) {
             (CelValue::Number(l), CelValue::Number(r)) => l.partial_cmp(r),
-            (CelValue::String(_) | CelValue::Bytes(_), CelValue::String(_) | CelValue::Bytes(_)) => {
+            (
+                CelValue::String(_) | CelValue::Bytes(_),
+                CelValue::String(_) | CelValue::Bytes(_),
+            ) => {
                 let l = match self {
                     CelValue::String(s) => s.as_ref().as_bytes(),
                     CelValue::Bytes(b) => b.as_ref(),
@@ -207,7 +208,10 @@ impl PartialOrd for CelValue<'_> {
 }
 
 impl<'a> CelValue<'a> {
-    pub fn cel_access<'b>(container: impl CelValueConv<'a>, key: impl CelValueConv<'b>) -> Result<CelValue<'a>, CelError<'b>>
+    pub fn cel_access<'b>(
+        container: impl CelValueConv<'a>,
+        key: impl CelValueConv<'b>,
+    ) -> Result<CelValue<'a>, CelError<'b>>
     where
         'a: 'b,
     {
@@ -220,7 +224,9 @@ impl<'a> CelValue<'a> {
                 .ok_or(CelError::MapKeyNotFound(key)),
             CelValue::List(list) => {
                 if let Some(idx) = key.as_number().and_then(|n| n.to_usize()) {
-                    list.get(idx).cloned().ok_or(CelError::IndexOutOfBounds(idx, list.len()))
+                    list.get(idx)
+                        .cloned()
+                        .ok_or(CelError::IndexOutOfBounds(idx, list.len()))
                 } else {
                     Err(CelError::IndexWithBadIndex(key))
                 }
@@ -232,50 +238,87 @@ impl<'a> CelValue<'a> {
         }
     }
 
-    pub fn cel_add(left: impl CelValueConv<'a>, right: impl CelValueConv<'a>) -> Result<CelValue<'a>, CelError<'a>> {
+    pub fn cel_add(
+        left: impl CelValueConv<'a>,
+        right: impl CelValueConv<'a>,
+    ) -> Result<CelValue<'a>, CelError<'a>> {
         match (left.conv(), right.conv()) {
             (CelValue::Number(l), CelValue::Number(r)) => Ok(CelValue::Number(l.cel_add(r)?)),
-            (CelValue::String(l), CelValue::String(r)) => Ok(CelValue::String(CelString::Owned(Arc::from(format!(
-                "{}{}",
-                l.as_ref(),
-                r.as_ref()
-            ))))),
+            (CelValue::String(l), CelValue::String(r)) => Ok(CelValue::String(CelString::Owned(
+                Arc::from(format!("{}{}", l.as_ref(), r.as_ref())),
+            ))),
             (CelValue::Bytes(l), CelValue::Bytes(r)) => Ok(CelValue::Bytes(CelBytes::Owned({
                 let mut l = l.as_ref().to_vec();
                 l.extend_from_slice(r.as_ref());
                 Bytes::from(l)
             }))),
-            (CelValue::List(l), CelValue::List(r)) => Ok(CelValue::List(l.iter().chain(r.iter()).cloned().collect())),
-            (CelValue::Map(l), CelValue::Map(r)) => Ok(CelValue::Map(l.iter().chain(r.iter()).cloned().collect())),
-            (left, right) => Err(CelError::BadOperation { left, right, op: "+" }),
+            (CelValue::List(l), CelValue::List(r)) => {
+                Ok(CelValue::List(l.iter().chain(r.iter()).cloned().collect()))
+            }
+            (CelValue::Map(l), CelValue::Map(r)) => {
+                Ok(CelValue::Map(l.iter().chain(r.iter()).cloned().collect()))
+            }
+            (left, right) => Err(CelError::BadOperation {
+                left,
+                right,
+                op: "+",
+            }),
         }
     }
 
-    pub fn cel_sub(left: impl CelValueConv<'a>, right: impl CelValueConv<'a>) -> Result<CelValue<'static>, CelError<'a>> {
+    pub fn cel_sub(
+        left: impl CelValueConv<'a>,
+        right: impl CelValueConv<'a>,
+    ) -> Result<CelValue<'static>, CelError<'a>> {
         match (left.conv(), right.conv()) {
             (CelValue::Number(l), CelValue::Number(r)) => Ok(CelValue::Number(l.cel_sub(r)?)),
-            (left, right) => Err(CelError::BadOperation { left, right, op: "-" }),
+            (left, right) => Err(CelError::BadOperation {
+                left,
+                right,
+                op: "-",
+            }),
         }
     }
 
-    pub fn cel_mul(left: impl CelValueConv<'a>, right: impl CelValueConv<'a>) -> Result<CelValue<'static>, CelError<'a>> {
+    pub fn cel_mul(
+        left: impl CelValueConv<'a>,
+        right: impl CelValueConv<'a>,
+    ) -> Result<CelValue<'static>, CelError<'a>> {
         match (left.conv(), right.conv()) {
             (CelValue::Number(l), CelValue::Number(r)) => Ok(CelValue::Number(l.cel_mul(r)?)),
-            (left, right) => Err(CelError::BadOperation { left, right, op: "*" }),
+            (left, right) => Err(CelError::BadOperation {
+                left,
+                right,
+                op: "*",
+            }),
         }
     }
 
-    pub fn cel_div(left: impl CelValueConv<'a>, right: impl CelValueConv<'a>) -> Result<CelValue<'static>, CelError<'a>> {
+    pub fn cel_div(
+        left: impl CelValueConv<'a>,
+        right: impl CelValueConv<'a>,
+    ) -> Result<CelValue<'static>, CelError<'a>> {
         match (left.conv(), right.conv()) {
             (CelValue::Number(l), CelValue::Number(r)) => Ok(CelValue::Number(l.cel_div(r)?)),
-            (left, right) => Err(CelError::BadOperation { left, right, op: "/" }),
+            (left, right) => Err(CelError::BadOperation {
+                left,
+                right,
+                op: "/",
+            }),
         }
     }
 
-    pub fn cel_rem(left: impl CelValueConv<'a>, right: impl CelValueConv<'a>) -> Result<CelValue<'static>, CelError<'a>> {
+    pub fn cel_rem(
+        left: impl CelValueConv<'a>,
+        right: impl CelValueConv<'a>,
+    ) -> Result<CelValue<'static>, CelError<'a>> {
         match (left.conv(), right.conv()) {
             (CelValue::Number(l), CelValue::Number(r)) => Ok(CelValue::Number(l.cel_rem(r)?)),
-            (left, right) => Err(CelError::BadOperation { left, right, op: "%" }),
+            (left, right) => Err(CelError::BadOperation {
+                left,
+                right,
+                op: "%",
+            }),
         }
     }
 
@@ -295,59 +338,100 @@ impl<'a> CelValue<'a> {
     }
 
     // left < right
-    pub fn cel_lt(left: impl CelValueConv<'a>, right: impl CelValueConv<'a>) -> Result<bool, CelError<'a>> {
+    pub fn cel_lt(
+        left: impl CelValueConv<'a>,
+        right: impl CelValueConv<'a>,
+    ) -> Result<bool, CelError<'a>> {
         let left = left.conv();
         let right = right.conv();
         left.partial_cmp(&right)
-            .ok_or(CelError::BadOperation { left, right, op: "<" })
+            .ok_or(CelError::BadOperation {
+                left,
+                right,
+                op: "<",
+            })
             .map(|o| matches!(o, std::cmp::Ordering::Less))
     }
 
     // left <= right
-    pub fn cel_lte(left: impl CelValueConv<'a>, right: impl CelValueConv<'a>) -> Result<bool, CelError<'a>> {
+    pub fn cel_lte(
+        left: impl CelValueConv<'a>,
+        right: impl CelValueConv<'a>,
+    ) -> Result<bool, CelError<'a>> {
         let left = left.conv();
         let right = right.conv();
         left.partial_cmp(&right)
-            .ok_or(CelError::BadOperation { left, right, op: "<=" })
+            .ok_or(CelError::BadOperation {
+                left,
+                right,
+                op: "<=",
+            })
             .map(|o| matches!(o, std::cmp::Ordering::Less | std::cmp::Ordering::Equal))
     }
 
     // left > right
-    pub fn cel_gt(left: impl CelValueConv<'a>, right: impl CelValueConv<'a>) -> Result<bool, CelError<'a>> {
+    pub fn cel_gt(
+        left: impl CelValueConv<'a>,
+        right: impl CelValueConv<'a>,
+    ) -> Result<bool, CelError<'a>> {
         let left = left.conv();
         let right = right.conv();
         left.partial_cmp(&right)
-            .ok_or(CelError::BadOperation { left, right, op: ">" })
+            .ok_or(CelError::BadOperation {
+                left,
+                right,
+                op: ">",
+            })
             .map(|o| matches!(o, std::cmp::Ordering::Greater))
     }
 
     // left >= right
-    pub fn cel_gte(left: impl CelValueConv<'a>, right: impl CelValueConv<'a>) -> Result<bool, CelError<'a>> {
+    pub fn cel_gte(
+        left: impl CelValueConv<'a>,
+        right: impl CelValueConv<'a>,
+    ) -> Result<bool, CelError<'a>> {
         let left = left.conv();
         let right = right.conv();
         left.partial_cmp(&right)
-            .ok_or(CelError::BadOperation { left, right, op: ">=" })
+            .ok_or(CelError::BadOperation {
+                left,
+                right,
+                op: ">=",
+            })
             .map(|o| matches!(o, std::cmp::Ordering::Greater | std::cmp::Ordering::Equal))
     }
 
     // left == right
-    pub fn cel_eq(left: impl CelValueConv<'a>, right: impl CelValueConv<'a>) -> Result<bool, CelError<'a>> {
+    pub fn cel_eq(
+        left: impl CelValueConv<'a>,
+        right: impl CelValueConv<'a>,
+    ) -> Result<bool, CelError<'a>> {
         let left = left.conv();
         let right = right.conv();
         Ok(left == right)
     }
 
     // left != right
-    pub fn cel_neq(left: impl CelValueConv<'a>, right: impl CelValueConv<'a>) -> Result<bool, CelError<'a>> {
+    pub fn cel_neq(
+        left: impl CelValueConv<'a>,
+        right: impl CelValueConv<'a>,
+    ) -> Result<bool, CelError<'a>> {
         let left = left.conv();
         let right = right.conv();
         Ok(left != right)
     }
 
     // left.contains(right)
-    pub fn cel_contains(left: impl CelValueConv<'a>, right: impl CelValueConv<'a>) -> Result<bool, CelError<'a>> {
+    pub fn cel_contains(
+        left: impl CelValueConv<'a>,
+        right: impl CelValueConv<'a>,
+    ) -> Result<bool, CelError<'a>> {
         Self::cel_in(right, left).map_err(|err| match err {
-            CelError::BadOperation { left, right, op: "in" } => CelError::BadOperation {
+            CelError::BadOperation {
+                left,
+                right,
+                op: "in",
+            } => CelError::BadOperation {
                 left: right,
                 right: left,
                 op: "contains",
@@ -358,11 +442,17 @@ impl<'a> CelValue<'a> {
     }
 
     // left in right
-    pub fn cel_in(left: impl CelValueConv<'a>, right: impl CelValueConv<'a>) -> Result<bool, CelError<'a>> {
+    pub fn cel_in(
+        left: impl CelValueConv<'a>,
+        right: impl CelValueConv<'a>,
+    ) -> Result<bool, CelError<'a>> {
         match (left.conv(), right.conv()) {
             (left, CelValue::List(r)) => Ok(r.contains(&left)),
             (left, CelValue::Map(r)) => Ok(r.iter().any(|(k, _)| k == &left)),
-            (left @ (CelValue::Bytes(_) | CelValue::String(_)), right @ (CelValue::Bytes(_) | CelValue::String(_))) => {
+            (
+                left @ (CelValue::Bytes(_) | CelValue::String(_)),
+                right @ (CelValue::Bytes(_) | CelValue::String(_)),
+            ) => {
                 let r = match &right {
                     CelValue::Bytes(b) => b.as_ref(),
                     CelValue::String(s) => s.as_ref().as_bytes(),
@@ -377,13 +467,23 @@ impl<'a> CelValue<'a> {
 
                 Ok(r.windows(l.len()).any(|w| w == l))
             }
-            (left, right) => Err(CelError::BadOperation { left, right, op: "in" }),
+            (left, right) => Err(CelError::BadOperation {
+                left,
+                right,
+                op: "in",
+            }),
         }
     }
 
-    pub fn cel_starts_with(left: impl CelValueConv<'a>, right: impl CelValueConv<'a>) -> Result<bool, CelError<'a>> {
+    pub fn cel_starts_with(
+        left: impl CelValueConv<'a>,
+        right: impl CelValueConv<'a>,
+    ) -> Result<bool, CelError<'a>> {
         match (left.conv(), right.conv()) {
-            (left @ (CelValue::Bytes(_) | CelValue::String(_)), right @ (CelValue::Bytes(_) | CelValue::String(_))) => {
+            (
+                left @ (CelValue::Bytes(_) | CelValue::String(_)),
+                right @ (CelValue::Bytes(_) | CelValue::String(_)),
+            ) => {
                 let r = match &right {
                     CelValue::Bytes(b) => b.as_ref(),
                     CelValue::String(s) => s.as_ref().as_bytes(),
@@ -406,9 +506,15 @@ impl<'a> CelValue<'a> {
         }
     }
 
-    pub fn cel_ends_with(left: impl CelValueConv<'a>, right: impl CelValueConv<'a>) -> Result<bool, CelError<'a>> {
+    pub fn cel_ends_with(
+        left: impl CelValueConv<'a>,
+        right: impl CelValueConv<'a>,
+    ) -> Result<bool, CelError<'a>> {
         match (left.conv(), right.conv()) {
-            (left @ (CelValue::Bytes(_) | CelValue::String(_)), right @ (CelValue::Bytes(_) | CelValue::String(_))) => {
+            (
+                left @ (CelValue::Bytes(_) | CelValue::String(_)),
+                right @ (CelValue::Bytes(_) | CelValue::String(_)),
+            ) => {
                 let r = match &right {
                     CelValue::Bytes(b) => b.as_ref(),
                     CelValue::String(s) => s.as_ref().as_bytes(),
@@ -431,7 +537,10 @@ impl<'a> CelValue<'a> {
         }
     }
 
-    pub fn cel_matches(value: impl CelValueConv<'a>, regex: &regex::Regex) -> Result<bool, CelError<'a>> {
+    pub fn cel_matches(
+        value: impl CelValueConv<'a>,
+        regex: &regex::Regex,
+    ) -> Result<bool, CelError<'a>> {
         match value.conv() {
             value @ (CelValue::Bytes(_) | CelValue::String(_)) => {
                 let maybe_str = match &value {
@@ -446,7 +555,10 @@ impl<'a> CelValue<'a> {
 
                 Ok(regex.is_match(input))
             }
-            value => Err(CelError::BadUnaryOperation { op: "matches", value }),
+            value => Err(CelError::BadUnaryOperation {
+                op: "matches",
+                value,
+            }),
         }
     }
 
@@ -462,7 +574,10 @@ impl<'a> CelValue<'a> {
                     Ok(false)
                 }
             }
-            value => Err(CelError::BadUnaryOperation { op: "isIpv4", value }),
+            value => Err(CelError::BadUnaryOperation {
+                op: "isIpv4",
+                value,
+            }),
         }
     }
 
@@ -478,7 +593,10 @@ impl<'a> CelValue<'a> {
                     Ok(false)
                 }
             }
-            value => Err(CelError::BadUnaryOperation { op: "isIpv6", value }),
+            value => Err(CelError::BadUnaryOperation {
+                op: "isIpv6",
+                value,
+            }),
         }
     }
 
@@ -494,7 +612,10 @@ impl<'a> CelValue<'a> {
                     Ok(false)
                 }
             }
-            value => Err(CelError::BadUnaryOperation { op: "isUuid", value }),
+            value => Err(CelError::BadUnaryOperation {
+                op: "isUuid",
+                value,
+            }),
         }
     }
 
@@ -510,7 +631,10 @@ impl<'a> CelValue<'a> {
                     Ok(false)
                 }
             }
-            value => Err(CelError::BadUnaryOperation { op: "isUlid", value }),
+            value => Err(CelError::BadUnaryOperation {
+                op: "isUlid",
+                value,
+            }),
         }
     }
 
@@ -524,7 +648,10 @@ impl<'a> CelValue<'a> {
                     Ok(false)
                 }
             }
-            value => Err(CelError::BadUnaryOperation { op: "isHostname", value }),
+            value => Err(CelError::BadUnaryOperation {
+                op: "isHostname",
+                value,
+            }),
         }
     }
 
@@ -552,7 +679,10 @@ impl<'a> CelValue<'a> {
                     Ok(false)
                 }
             }
-            value => Err(CelError::BadUnaryOperation { op: "isEmail", value }),
+            value => Err(CelError::BadUnaryOperation {
+                op: "isEmail",
+                value,
+            }),
         }
     }
 
@@ -584,7 +714,10 @@ impl<'a> CelValue<'a> {
             Self::String(s) => Ok(s.as_ref().len() as u64),
             Self::List(l) => Ok(l.len() as u64),
             Self::Map(m) => Ok(m.len() as u64),
-            item => Err(CelError::BadUnaryOperation { op: "size", value: item }),
+            item => Err(CelError::BadUnaryOperation {
+                op: "size",
+                value: item,
+            }),
         }
     }
 
@@ -593,7 +726,13 @@ impl<'a> CelValue<'a> {
         map_fn: impl Fn(CelValue<'a>) -> Result<CelValue<'a>, CelError<'a>>,
     ) -> Result<CelValue<'a>, CelError<'a>> {
         match item.conv() {
-            CelValue::List(items) => Ok(CelValue::List(items.iter().cloned().map(map_fn).collect::<Result<_, _>>()?)),
+            CelValue::List(items) => Ok(CelValue::List(
+                items
+                    .iter()
+                    .cloned()
+                    .map(map_fn)
+                    .collect::<Result<_, _>>()?,
+            )),
             CelValue::Map(map) => Ok(CelValue::List(
                 map.iter()
                     .map(|(key, _)| key)
@@ -617,7 +756,11 @@ impl<'a> CelValue<'a> {
 
         match item.conv() {
             CelValue::List(items) => Ok(CelValue::List(
-                items.iter().cloned().filter_map(filter_map).collect::<Result<_, _>>()?,
+                items
+                    .iter()
+                    .cloned()
+                    .filter_map(filter_map)
+                    .collect::<Result<_, _>>()?,
             )),
             CelValue::Map(map) => Ok(CelValue::List(
                 map.iter()
@@ -626,7 +769,10 @@ impl<'a> CelValue<'a> {
                     .filter_map(filter_map)
                     .collect::<Result<_, _>>()?,
             )),
-            value => Err(CelError::BadUnaryOperation { op: "filter", value }),
+            value => Err(CelError::BadUnaryOperation {
+                op: "filter",
+                value,
+            }),
         }
     }
 
@@ -678,7 +824,10 @@ impl<'a> CelValue<'a> {
         match item.conv() {
             CelValue::List(items) => exists(items.iter().cloned(), map_fn),
             CelValue::Map(map) => exists(map.iter().map(|(key, _)| key).cloned(), map_fn),
-            value => Err(CelError::BadUnaryOperation { op: "existsOne", value }),
+            value => Err(CelError::BadUnaryOperation {
+                op: "existsOne",
+                value,
+            }),
         }
     }
 
@@ -709,16 +858,19 @@ impl<'a> CelValue<'a> {
         match item.conv() {
             CelValue::List(items) => exists_one(items.iter().cloned(), map_fn),
             CelValue::Map(map) => exists_one(map.iter().map(|(key, _)| key).cloned(), map_fn),
-            value => Err(CelError::BadUnaryOperation { op: "existsOne", value }),
+            value => Err(CelError::BadUnaryOperation {
+                op: "existsOne",
+                value,
+            }),
         }
     }
 
     pub fn cel_to_string(item: impl CelValueConv<'a>) -> CelValue<'a> {
         match item.conv() {
             item @ CelValue::String(_) => item,
-            CelValue::Bytes(CelBytes::Owned(bytes)) => {
-                CelValue::String(CelString::Owned(String::from_utf8_lossy(bytes.as_ref()).into()))
-            }
+            CelValue::Bytes(CelBytes::Owned(bytes)) => CelValue::String(CelString::Owned(
+                String::from_utf8_lossy(bytes.as_ref()).into(),
+            )),
             CelValue::Bytes(CelBytes::Borrowed(b)) => match String::from_utf8_lossy(b) {
                 Cow::Borrowed(b) => CelValue::String(CelString::Borrowed(b)),
                 Cow::Owned(o) => CelValue::String(CelString::Owned(o.into())),
@@ -730,8 +882,12 @@ impl<'a> CelValue<'a> {
     pub fn cel_to_bytes(item: impl CelValueConv<'a>) -> Result<CelValue<'a>, CelError<'a>> {
         match item.conv() {
             item @ CelValue::Bytes(_) => Ok(item.clone()),
-            CelValue::String(CelString::Owned(s)) => Ok(CelValue::Bytes(CelBytes::Owned(s.as_bytes().to_vec().into()))),
-            CelValue::String(CelString::Borrowed(s)) => Ok(CelValue::Bytes(CelBytes::Borrowed(s.as_bytes()))),
+            CelValue::String(CelString::Owned(s)) => Ok(CelValue::Bytes(CelBytes::Owned(
+                s.as_bytes().to_vec().into(),
+            ))),
+            CelValue::String(CelString::Borrowed(s)) => {
+                Ok(CelValue::Bytes(CelBytes::Borrowed(s.as_bytes())))
+            }
             value => Err(CelError::BadUnaryOperation { op: "bytes", value }),
         }
     }
@@ -793,11 +949,17 @@ impl<'a> CelValue<'a> {
                     Ok(CelValue::Null)
                 }
             }
-            value => Err(CelError::BadUnaryOperation { op: "double", value }),
+            value => Err(CelError::BadUnaryOperation {
+                op: "double",
+                value,
+            }),
         }
     }
 
-    pub fn cel_to_enum(item: impl CelValueConv<'a>, path: impl CelValueConv<'a>) -> Result<CelValue<'a>, CelError<'a>> {
+    pub fn cel_to_enum(
+        item: impl CelValueConv<'a>,
+        path: impl CelValueConv<'a>,
+    ) -> Result<CelValue<'a>, CelError<'a>> {
         match (item.conv(), path.conv()) {
             (CelValue::Number(number), CelValue::String(tag)) => {
                 let Some(value) = number.to_i32() else {
@@ -806,7 +968,9 @@ impl<'a> CelValue<'a> {
 
                 Ok(CelValue::Enum(CelEnum { tag, value }))
             }
-            (CelValue::Enum(CelEnum { value, .. }), CelValue::String(tag)) => Ok(CelValue::Enum(CelEnum { tag, value })),
+            (CelValue::Enum(CelEnum { value, .. }), CelValue::String(tag)) => {
+                Ok(CelValue::Enum(CelEnum { tag, value }))
+            }
             (value, path) => Err(CelError::BadOperation {
                 op: "enum",
                 left: value,
@@ -820,7 +984,10 @@ impl PartialEq for CelValue<'_> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (CelValue::Bool(left), CelValue::Bool(right)) => left == right,
-            (left @ (CelValue::Bytes(_) | CelValue::String(_)), right @ (CelValue::Bytes(_) | CelValue::String(_))) => {
+            (
+                left @ (CelValue::Bytes(_) | CelValue::String(_)),
+                right @ (CelValue::Bytes(_) | CelValue::String(_)),
+            ) => {
                 let left = match left {
                     CelValue::String(s) => s.as_bytes(),
                     CelValue::Bytes(b) => b.as_ref(),
@@ -836,14 +1003,14 @@ impl PartialEq for CelValue<'_> {
                 left == right
             }
             (CelValue::Duration(left), CelValue::Duration(right)) => left == right,
-            (CelValue::Duration(dur), CelValue::Number(seconds)) | (CelValue::Number(seconds), CelValue::Duration(dur)) => {
+            (CelValue::Duration(dur), CelValue::Number(seconds))
+            | (CelValue::Number(seconds), CelValue::Duration(dur)) => {
                 (dur.num_seconds() as f64) + dur.subsec_nanos() as f64 / 1_000_000_000.0 == *seconds
             }
             (CelValue::Timestamp(left), CelValue::Timestamp(right)) => left == right,
             (CelValue::Enum(left), CelValue::Enum(right)) => left == right,
-            (CelValue::Enum(enum_), CelValue::Number(value)) | (CelValue::Number(value), CelValue::Enum(enum_)) => {
-                enum_.value == *value
-            }
+            (CelValue::Enum(enum_), CelValue::Number(value))
+            | (CelValue::Number(value), CelValue::Enum(enum_)) => enum_.value == *value,
             (CelValue::List(left), CelValue::List(right)) => left == right,
             (CelValue::Map(left), CelValue::Map(right)) => left == right,
             (CelValue::Number(left), CelValue::Number(right)) => left == right,
@@ -1000,7 +1167,10 @@ impl std::fmt::Display for CelValue<'_> {
             CelValue::Map(m) => {
                 let mut map = f.debug_map();
                 for (key, value) in m.iter() {
-                    map.entry(&fmtools::fmt(|fmt| key.fmt(fmt)), &fmtools::fmt(|fmt| value.fmt(fmt)));
+                    map.entry(
+                        &fmtools::fmt(|fmt| key.fmt(fmt)),
+                        &fmtools::fmt(|fmt| value.fmt(fmt)),
+                    );
                 }
                 map.finish()
             }
@@ -1047,11 +1217,13 @@ impl PartialOrd for NumberTy {
         NumberTy::promote(*self, *other).and_then(|(l, r)| match (l, r) {
             (NumberTy::I64(l), NumberTy::I64(r)) => Some(l.cmp(&r)),
             (NumberTy::U64(l), NumberTy::U64(r)) => Some(l.cmp(&r)),
-            (NumberTy::F64(l), NumberTy::F64(r)) => Some(if l.approx_eq(r, float_cmp::F64Margin::default()) {
-                std::cmp::Ordering::Equal
-            } else {
-                l.partial_cmp(&r).unwrap_or(std::cmp::Ordering::Equal)
-            }),
+            (NumberTy::F64(l), NumberTy::F64(r)) => {
+                Some(if l.approx_eq(r, float_cmp::F64Margin::default()) {
+                    std::cmp::Ordering::Equal
+                } else {
+                    l.partial_cmp(&r).unwrap_or(std::cmp::Ordering::Equal)
+                })
+            }
             // I think this is unreachable
             _ => None,
         })
@@ -1062,8 +1234,12 @@ impl NumberTy {
     pub fn cel_add(self, other: Self) -> Result<Self, CelError<'static>> {
         const ERROR: CelError<'static> = CelError::NumberOutOfRange { op: "addition" };
         match NumberTy::promote(self, other).ok_or(ERROR)? {
-            (NumberTy::I64(l), NumberTy::I64(r)) => Ok(NumberTy::I64(l.checked_add(r).ok_or(ERROR)?)),
-            (NumberTy::U64(l), NumberTy::U64(r)) => Ok(NumberTy::U64(l.checked_add(r).ok_or(ERROR)?)),
+            (NumberTy::I64(l), NumberTy::I64(r)) => {
+                Ok(NumberTy::I64(l.checked_add(r).ok_or(ERROR)?))
+            }
+            (NumberTy::U64(l), NumberTy::U64(r)) => {
+                Ok(NumberTy::U64(l.checked_add(r).ok_or(ERROR)?))
+            }
             (NumberTy::F64(l), NumberTy::F64(r)) => Ok(NumberTy::F64(l + r)),
             // I think this is unreachable
             _ => Err(ERROR),
@@ -1073,8 +1249,12 @@ impl NumberTy {
     pub fn cel_sub(self, other: Self) -> Result<Self, CelError<'static>> {
         const ERROR: CelError<'static> = CelError::NumberOutOfRange { op: "subtraction" };
         match NumberTy::promote(self, other).ok_or(ERROR)? {
-            (NumberTy::I64(l), NumberTy::I64(r)) => Ok(NumberTy::I64(l.checked_sub(r).ok_or(ERROR)?)),
-            (NumberTy::U64(l), NumberTy::U64(r)) => Ok(NumberTy::U64(l.checked_sub(r).ok_or(ERROR)?)),
+            (NumberTy::I64(l), NumberTy::I64(r)) => {
+                Ok(NumberTy::I64(l.checked_sub(r).ok_or(ERROR)?))
+            }
+            (NumberTy::U64(l), NumberTy::U64(r)) => {
+                Ok(NumberTy::U64(l.checked_sub(r).ok_or(ERROR)?))
+            }
             (NumberTy::F64(l), NumberTy::F64(r)) => Ok(NumberTy::F64(l - r)),
             // I think this is unreachable
             _ => Err(ERROR),
@@ -1082,10 +1262,16 @@ impl NumberTy {
     }
 
     pub fn cel_mul(self, other: Self) -> Result<Self, CelError<'static>> {
-        const ERROR: CelError<'static> = CelError::NumberOutOfRange { op: "multiplication" };
+        const ERROR: CelError<'static> = CelError::NumberOutOfRange {
+            op: "multiplication",
+        };
         match NumberTy::promote(self, other).ok_or(ERROR)? {
-            (NumberTy::I64(l), NumberTy::I64(r)) => Ok(NumberTy::I64(l.checked_mul(r).ok_or(ERROR)?)),
-            (NumberTy::U64(l), NumberTy::U64(r)) => Ok(NumberTy::U64(l.checked_mul(r).ok_or(ERROR)?)),
+            (NumberTy::I64(l), NumberTy::I64(r)) => {
+                Ok(NumberTy::I64(l.checked_mul(r).ok_or(ERROR)?))
+            }
+            (NumberTy::U64(l), NumberTy::U64(r)) => {
+                Ok(NumberTy::U64(l.checked_mul(r).ok_or(ERROR)?))
+            }
             (NumberTy::F64(l), NumberTy::F64(r)) => Ok(NumberTy::F64(l * r)),
             // I think this is unreachable
             _ => Err(ERROR),
@@ -1094,13 +1280,19 @@ impl NumberTy {
 
     pub fn cel_div(self, other: Self) -> Result<Self, CelError<'static>> {
         if other == 0 {
-            return Err(CelError::NumberOutOfRange { op: "division by zero" });
+            return Err(CelError::NumberOutOfRange {
+                op: "division by zero",
+            });
         }
 
         const ERROR: CelError<'static> = CelError::NumberOutOfRange { op: "division" };
         match NumberTy::promote(self, other).ok_or(ERROR)? {
-            (NumberTy::I64(l), NumberTy::I64(r)) => Ok(NumberTy::I64(l.checked_div(r).ok_or(ERROR)?)),
-            (NumberTy::U64(l), NumberTy::U64(r)) => Ok(NumberTy::U64(l.checked_div(r).ok_or(ERROR)?)),
+            (NumberTy::I64(l), NumberTy::I64(r)) => {
+                Ok(NumberTy::I64(l.checked_div(r).ok_or(ERROR)?))
+            }
+            (NumberTy::U64(l), NumberTy::U64(r)) => {
+                Ok(NumberTy::U64(l.checked_div(r).ok_or(ERROR)?))
+            }
             (NumberTy::F64(l), NumberTy::F64(r)) => Ok(NumberTy::F64(l / r)),
             // I think this is unreachable
             _ => Err(ERROR),
@@ -1109,13 +1301,19 @@ impl NumberTy {
 
     pub fn cel_rem(self, other: Self) -> Result<Self, CelError<'static>> {
         if other == 0 {
-            return Err(CelError::NumberOutOfRange { op: "remainder by zero" });
+            return Err(CelError::NumberOutOfRange {
+                op: "remainder by zero",
+            });
         }
 
         const ERROR: CelError<'static> = CelError::NumberOutOfRange { op: "remainder" };
         match NumberTy::promote(self, other).ok_or(ERROR)? {
-            (NumberTy::I64(l), NumberTy::I64(r)) => Ok(NumberTy::I64(l.checked_rem(r).ok_or(ERROR)?)),
-            (NumberTy::U64(l), NumberTy::U64(r)) => Ok(NumberTy::U64(l.checked_rem(r).ok_or(ERROR)?)),
+            (NumberTy::I64(l), NumberTy::I64(r)) => {
+                Ok(NumberTy::I64(l.checked_rem(r).ok_or(ERROR)?))
+            }
+            (NumberTy::U64(l), NumberTy::U64(r)) => {
+                Ok(NumberTy::U64(l.checked_rem(r).ok_or(ERROR)?))
+            }
             _ => Err(ERROR),
         }
     }
@@ -1124,7 +1322,9 @@ impl NumberTy {
         const ERROR: CelError<'static> = CelError::NumberOutOfRange { op: "negation" };
         match self {
             NumberTy::I64(n) => Ok(NumberTy::I64(n.checked_neg().ok_or(ERROR)?)),
-            NumberTy::U64(n) => Ok(NumberTy::I64(n.to_i64().ok_or(ERROR)?.checked_neg().ok_or(ERROR)?)),
+            NumberTy::U64(n) => Ok(NumberTy::I64(
+                n.to_i64().ok_or(ERROR)?.checked_neg().ok_or(ERROR)?,
+            )),
             NumberTy::F64(n) => Ok(NumberTy::F64(-n)),
         }
     }
@@ -1173,7 +1373,9 @@ impl PartialEq for NumberTy {
             .map(|(l, r)| match (l, r) {
                 (NumberTy::I64(l), NumberTy::I64(r)) => l == r,
                 (NumberTy::U64(l), NumberTy::U64(r)) => l == r,
-                (NumberTy::F64(l), NumberTy::F64(r)) => l.approx_eq(r, float_cmp::F64Margin::default()),
+                (NumberTy::F64(l), NumberTy::F64(r)) => {
+                    l.approx_eq(r, float_cmp::F64Margin::default())
+                }
                 // I think this is unreachable
                 _ => false,
             })
@@ -1292,16 +1494,25 @@ impl NumberTy {
         match (left, right) {
             (NumberTy::I64(l), NumberTy::I64(r)) => Some((NumberTy::I64(l), NumberTy::I64(r))),
             (NumberTy::U64(l), NumberTy::U64(r)) => Some((NumberTy::U64(l), NumberTy::U64(r))),
-            (NumberTy::F64(_), _) | (_, NumberTy::F64(_)) => Some((Self::F64(left.to_f64()?), Self::F64(right.to_f64()?))),
-            (NumberTy::I64(_), _) | (_, NumberTy::I64(_)) => Some((Self::I64(left.to_i64()?), Self::I64(right.to_i64()?))),
+            (NumberTy::F64(_), _) | (_, NumberTy::F64(_)) => {
+                Some((Self::F64(left.to_f64()?), Self::F64(right.to_f64()?)))
+            }
+            (NumberTy::I64(_), _) | (_, NumberTy::I64(_)) => {
+                Some((Self::I64(left.to_i64()?), Self::I64(right.to_i64()?)))
+            }
         }
     }
 }
 
-pub fn array_access<'a, 'b, T>(array: &'a [T], idx: impl CelValueConv<'b>) -> Result<&'a T, CelError<'b>> {
+pub fn array_access<'a, 'b, T>(
+    array: &'a [T],
+    idx: impl CelValueConv<'b>,
+) -> Result<&'a T, CelError<'b>> {
     let idx = idx.conv();
     match idx.as_number().and_then(|n| n.to_usize()) {
-        Some(idx) => array.get(idx).ok_or(CelError::IndexOutOfBounds(idx, array.len())),
+        Some(idx) => array
+            .get(idx)
+            .ok_or(CelError::IndexOutOfBounds(idx, array.len())),
         _ => Err(CelError::IndexWithBadIndex(idx)),
     }
 }
@@ -1338,7 +1549,10 @@ impl PartialEq<CelValue<'_>> for Bytes {
     }
 }
 
-pub fn array_contains<'a, 'b, T: PartialEq<CelValue<'b>>>(array: &'a [T], value: impl CelValueConv<'b>) -> bool {
+pub fn array_contains<'a, 'b, T: PartialEq<CelValue<'b>>>(
+    array: &'a [T],
+    value: impl CelValueConv<'b>,
+) -> bool {
     let value = value.conv();
     array.iter().any(|v| v == &value)
 }
@@ -1417,7 +1631,10 @@ where
 }
 
 #[allow(private_bounds)]
-pub fn map_access<'a, 'b, K, V>(map: &'a impl Map<K, V>, key: impl CelValueConv<'b>) -> Result<&'a V, CelError<'b>>
+pub fn map_access<'a, 'b, K, V>(
+    map: &'a impl Map<K, V>,
+    key: impl CelValueConv<'b>,
+) -> Result<&'a V, CelError<'b>>
 where
     K: Ord + Hash + MapKeyCast,
     K: std::borrow::Borrow<K::Borrow>,
@@ -1588,7 +1805,12 @@ pub struct EnumVtable {
 impl EnumVtable {
     pub fn from_tag(tag: &str) -> Option<&'static EnumVtable> {
         static LOOKUP: std::sync::LazyLock<HashMap<&'static str, &'static EnumVtable>> =
-            std::sync::LazyLock::new(|| TINC_CEL_ENUM_VTABLE.into_iter().map(|item| (item.proto_path, item)).collect());
+            std::sync::LazyLock::new(|| {
+                TINC_CEL_ENUM_VTABLE
+                    .into_iter()
+                    .map(|item| (item.proto_path, item))
+                    .collect()
+            });
 
         LOOKUP.get(tag).copied()
     }
@@ -1614,8 +1836,8 @@ mod tests {
 
     use super::CelString;
     use crate::{
-        CelBooleanConv, CelBytes, CelEnum, CelError, CelValue, CelValueConv, MapKeyCast, NumberTy, array_access,
-        array_contains, map_access, map_contains,
+        CelBooleanConv, CelBytes, CelEnum, CelError, CelValue, CelValueConv, MapKeyCast, NumberTy,
+        array_access, array_contains, map_access, map_contains,
     };
 
     #[test]
@@ -1871,7 +2093,10 @@ mod tests {
         assert_eq!(s, CelValue::String(CelString::Owned(Arc::from("foobar"))));
         // bytes
         let b = CelValue::cel_add(Bytes::from_static(b"ab"), Bytes::from_static(b"cd")).unwrap();
-        assert_eq!(b, CelValue::Bytes(CelBytes::Owned(Bytes::from_static(b"abcd"))));
+        assert_eq!(
+            b,
+            CelValue::Bytes(CelBytes::Owned(Bytes::from_static(b"abcd")))
+        );
         // list
         let l = CelValue::cel_add(make_list(&[1, 2]), make_list(&[3])).unwrap();
         assert_eq!(l, make_list(&[1, 2, 3]));
@@ -2014,7 +2239,11 @@ mod tests {
         assert!(CelValue::cel_matches(b, &re).unwrap());
 
         // non-utf8 bytes -> Ok(false)
-        let bad = CelValue::cel_matches(Bytes::from_static(&[0xff, 0xfe]), &Regex::new(".*").unwrap()).unwrap();
+        let bad = CelValue::cel_matches(
+            Bytes::from_static(&[0xff, 0xfe]),
+            &Regex::new(".*").unwrap(),
+        )
+        .unwrap();
         assert!(!bad);
 
         let err = CelValue::cel_matches(1i32, &re).unwrap_err();
@@ -2217,8 +2446,10 @@ mod tests {
         assert_eq!(keys, [10, 20].conv());
 
         // filter: keep evens
-        let f =
-            CelValue::cel_filter([1, 2, 3, 4].conv(), |v| Ok(v.as_number().unwrap().to_i64().unwrap() % 2 == 0)).unwrap();
+        let f = CelValue::cel_filter([1, 2, 3, 4].conv(), |v| {
+            Ok(v.as_number().unwrap().to_i64().unwrap() % 2 == 0)
+        })
+        .unwrap();
         assert_eq!(f, [2, 4].conv());
 
         // filter on map => list of keys
@@ -2241,7 +2472,10 @@ mod tests {
 
         let err = CelValue::cel_filter(list, |v| {
             if v == 2i32.conv() {
-                Err(CelError::BadUnaryOperation { op: "test", value: v })
+                Err(CelError::BadUnaryOperation {
+                    op: "test",
+                    value: v,
+                })
             } else {
                 Ok(true)
             }
@@ -2259,19 +2493,27 @@ mod tests {
     #[test]
     fn celvalue_list_and_map_all() {
         let list = [1, 2, 3].conv();
-        let all_pos = CelValue::cel_all(list.clone(), |v| Ok(v.as_number().unwrap().to_i64().unwrap() > 0)).unwrap();
+        let all_pos = CelValue::cel_all(list.clone(), |v| {
+            Ok(v.as_number().unwrap().to_i64().unwrap() > 0)
+        })
+        .unwrap();
         assert!(all_pos);
 
         let list2 = [1, 0, 3].conv();
-        let any_zero = CelValue::cel_all(list2, |v| Ok(v.as_number().unwrap().to_i64().unwrap() > 0)).unwrap();
+        let any_zero =
+            CelValue::cel_all(list2, |v| Ok(v.as_number().unwrap().to_i64().unwrap() > 0)).unwrap();
         assert!(!any_zero);
 
         let map = as_map(&[(2, 20), (4, 40)]);
-        let all_keys = CelValue::cel_all(map.clone(), |v| Ok(v.as_number().unwrap().to_i64().unwrap() < 5)).unwrap();
+        let all_keys = CelValue::cel_all(map.clone(), |v| {
+            Ok(v.as_number().unwrap().to_i64().unwrap() < 5)
+        })
+        .unwrap();
         assert!(all_keys);
 
         let map2 = as_map(&[(2, 20), (6, 60)]);
-        let some_ge5 = CelValue::cel_all(map2, |v| Ok(v.as_number().unwrap().to_i64().unwrap() < 5)).unwrap();
+        let some_ge5 =
+            CelValue::cel_all(map2, |v| Ok(v.as_number().unwrap().to_i64().unwrap() < 5)).unwrap();
         assert!(!some_ge5);
     }
 
@@ -2495,7 +2737,10 @@ mod tests {
         assert_eq!(out_num, CelValue::String(CelString::Owned(Arc::from("42"))));
 
         let out_bool = CelValue::cel_to_string(true);
-        assert_eq!(out_bool, CelValue::String(CelString::Owned(Arc::from("true"))));
+        assert_eq!(
+            out_bool,
+            CelValue::String(CelString::Owned(Arc::from("true")))
+        );
     }
 
     #[test]
@@ -2628,7 +2873,10 @@ mod tests {
     #[test]
     fn celvalue_to_double_from_string_valid() {
         let result = CelValue::cel_to_double("3.141592653589793").unwrap();
-        assert_eq!(result, CelValue::Number(NumberTy::F64(std::f64::consts::PI)));
+        assert_eq!(
+            result,
+            CelValue::Number(NumberTy::F64(std::f64::consts::PI))
+        );
     }
 
     #[test]
@@ -2646,7 +2894,10 @@ mod tests {
     #[test]
     fn celvalue_to_double_from_f64_number() {
         let result = CelValue::cel_to_double(std::f64::consts::PI).unwrap();
-        assert_eq!(result, CelValue::Number(NumberTy::F64(std::f64::consts::PI)));
+        assert_eq!(
+            result,
+            CelValue::Number(NumberTy::F64(std::f64::consts::PI))
+        );
     }
 
     #[test]
@@ -2736,8 +2987,10 @@ mod tests {
     fn celvalue_eq_timestamp_variants() {
         use chrono::{DateTime, FixedOffset};
 
-        let dt1: DateTime<FixedOffset> = DateTime::parse_from_rfc3339("2021-01-01T12:00:00+00:00").unwrap();
-        let dt2: DateTime<FixedOffset> = DateTime::parse_from_rfc3339("2021-01-01T12:00:00+00:00").unwrap();
+        let dt1: DateTime<FixedOffset> =
+            DateTime::parse_from_rfc3339("2021-01-01T12:00:00+00:00").unwrap();
+        let dt2: DateTime<FixedOffset> =
+            DateTime::parse_from_rfc3339("2021-01-01T12:00:00+00:00").unwrap();
 
         let t1 = CelValue::Timestamp(dt1);
         let t2 = CelValue::Timestamp(dt2);
@@ -2759,8 +3012,14 @@ mod tests {
         let list2 = (&[1, 2, 3][..]).conv();
         assert_eq!(list1, list2);
 
-        let map1 = CelValue::Map(Arc::from(vec![(1i32.conv(), 10i32.conv()), (2i32.conv(), 20i32.conv())]));
-        let map2 = CelValue::Map(Arc::from(vec![(1i32.conv(), 10i32.conv()), (2i32.conv(), 20i32.conv())]));
+        let map1 = CelValue::Map(Arc::from(vec![
+            (1i32.conv(), 10i32.conv()),
+            (2i32.conv(), 20i32.conv()),
+        ]));
+        let map2 = CelValue::Map(Arc::from(vec![
+            (1i32.conv(), 10i32.conv()),
+            (2i32.conv(), 20i32.conv()),
+        ]));
         assert_eq!(map1, map2);
     }
 
@@ -2788,10 +3047,14 @@ mod tests {
 
     #[test]
     fn celvalue_display() {
-        let ts: DateTime<FixedOffset> = DateTime::parse_from_rfc3339("2025-05-04T00:00:00+00:00").unwrap();
+        let ts: DateTime<FixedOffset> =
+            DateTime::parse_from_rfc3339("2025-05-04T00:00:00+00:00").unwrap();
 
         // Build a simple map: {1: "x", 2: "y"}
-        let map_val = CelValue::Map(Arc::from(vec![(1i32.conv(), "x".conv()), (2i32.conv(), "y".conv())]));
+        let map_val = CelValue::Map(Arc::from(vec![
+            (1i32.conv(), "x".conv()),
+            (2i32.conv(), "y".conv()),
+        ]));
 
         let outputs = [
             format!("{}", CelValue::Bool(false)),
@@ -2861,7 +3124,9 @@ mod tests {
         // Map
         let non_empty_map = CelValue::Map(Arc::from(vec![(1i32.conv(), 2i32.conv())]));
         assert!(non_empty_map.to_bool());
-        let empty_map = CelValue::Map(Arc::from(Vec::<(CelValue, CelValue)>::new().into_boxed_slice()));
+        let empty_map = CelValue::Map(Arc::from(
+            Vec::<(CelValue, CelValue)>::new().into_boxed_slice(),
+        ));
         assert!(!empty_map.to_bool());
 
         // Null
@@ -2872,9 +3137,11 @@ mod tests {
         assert!(!CelValue::Duration(Duration::zero()).to_bool());
 
         // Timestamp
-        let epoch: DateTime<FixedOffset> = DateTime::parse_from_rfc3339("1970-01-01T00:00:00+00:00").unwrap();
+        let epoch: DateTime<FixedOffset> =
+            DateTime::parse_from_rfc3339("1970-01-01T00:00:00+00:00").unwrap();
         assert!(!CelValue::Timestamp(epoch).to_bool());
-        let later: DateTime<FixedOffset> = DateTime::parse_from_rfc3339("2025-05-04T00:00:00+00:00").unwrap();
+        let later: DateTime<FixedOffset> =
+            DateTime::parse_from_rfc3339("2025-05-04T00:00:00+00:00").unwrap();
         assert!(CelValue::Timestamp(later).to_bool());
     }
 
@@ -3414,12 +3681,24 @@ mod tests {
 
         CelMode::set(CelMode::Serde);
         let current = CelMode::current();
-        assert!(current.is_json(), "CelMode should report JSON when set to Json");
-        assert!(!current.is_proto(), "CelMode should not report Proto when set to Json");
+        assert!(
+            current.is_json(),
+            "CelMode should report JSON when set to Json"
+        );
+        assert!(
+            !current.is_proto(),
+            "CelMode should not report Proto when set to Json"
+        );
 
         CelMode::set(CelMode::Proto);
         let current = CelMode::current();
-        assert!(current.is_proto(), "CelMode should report Proto when set to Proto");
-        assert!(!current.is_json(), "CelMode should not report JSON when set to Proto");
+        assert!(
+            current.is_proto(),
+            "CelMode should report Proto when set to Proto"
+        );
+        assert!(
+            !current.is_json(),
+            "CelMode should not report JSON when set to Proto"
+        );
     }
 }

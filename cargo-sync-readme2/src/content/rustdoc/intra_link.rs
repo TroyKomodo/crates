@@ -6,7 +6,9 @@ use std::hash::BuildHasher;
 use std::rc::Rc;
 
 use pulldown_cmark::{BrokenLink, CowStr, Event, Options, Tag};
-use rustdoc_types::{Crate, Id, Item, ItemEnum, ItemKind, ItemSummary, MacroKind, StructKind, VariantKind};
+use rustdoc_types::{
+    Crate, Id, Item, ItemEnum, ItemKind, ItemSummary, MacroKind, StructKind, VariantKind,
+};
 
 trait CowStrExt<'a> {
     fn as_str(&'a self) -> &'a str;
@@ -36,7 +38,10 @@ impl Parser<(), ()> {
         item: &'a Item,
         local_html_root_url: &str,
         mappings: &BTreeMap<String, String>,
-    ) -> Parser<impl FnMut(BrokenLink<'_>) -> Option<BrokenLinkPair<'a>>, impl FnMut(Event<'a>) -> Option<Event<'a>>> {
+    ) -> Parser<
+        impl FnMut(BrokenLink<'_>) -> Option<BrokenLinkPair<'a>>,
+        impl FnMut(Event<'a>) -> Option<Event<'a>>,
+    > {
         let url_map = Rc::new(resolve_links(doc, item, local_html_root_url, mappings));
 
         let broken_link_callback = {
@@ -64,8 +69,12 @@ where
     where
         'a: 'b,
     {
-        pulldown_cmark::Parser::new_with_broken_link_callback(doc, Options::all(), Some(&mut self.broken_link_callback))
-            .filter_map(&mut self.iterator_map)
+        pulldown_cmark::Parser::new_with_broken_link_callback(
+            doc,
+            Options::all(),
+            Some(&mut self.broken_link_callback),
+        )
+        .filter_map(&mut self.iterator_map)
     }
 }
 
@@ -147,7 +156,11 @@ fn extra_paths<'doc, S: BuildHasher + Default>(
     let mut heap: BinaryHeap<HeapItem<'_>> = index
         .iter()
         .map(|(id, item)| {
-            let depth = if paths.contains_key(id) { 0 } else { usize::MAX };
+            let depth = if paths.contains_key(id) {
+                0
+            } else {
+                usize::MAX
+            };
             HeapItem {
                 depth: Reverse(depth),
                 id,
@@ -262,7 +275,10 @@ fn item_children<'doc>(parent: &'doc Item) -> Option<Box<dyn Iterator<Item = &'d
     }
 }
 
-fn convert_link<'a>(url_map: &BTreeMap<&str, Option<String>>, mut event: Event<'a>) -> Option<Event<'a>> {
+fn convert_link<'a>(
+    url_map: &BTreeMap<&str, Option<String>>,
+    mut event: Event<'a>,
+) -> Option<Event<'a>> {
     if let Event::Start(Tag::Link { dest_url: url, .. }) = &mut event
         && let Some(full_url) = url_map.get(url.as_ref())
     {
@@ -298,14 +314,16 @@ fn id_to_url<S: BuildHasher + Default>(
     match (&item.kind, item.path.as_slice()) {
         (ItemKind::Module, ps) => join(ps, format_args!("index.html")),
         (ItemKind::Struct, [ps @ .., name]) => join(ps, format_args!("struct.{name}.html")),
-        (ItemKind::StructField, [ps @ .., struct_name, field]) => {
-            join(ps, format_args!("struct.{struct_name}.html#structfield.{field}"))
-        }
+        (ItemKind::StructField, [ps @ .., struct_name, field]) => join(
+            ps,
+            format_args!("struct.{struct_name}.html#structfield.{field}"),
+        ),
         (ItemKind::Union, [ps @ .., name]) => join(ps, format_args!("union.{name}.html")),
         (ItemKind::Enum, [ps @ .., name]) => join(ps, format_args!("enum.{name}.html")),
-        (ItemKind::Variant, [ps @ .., enum_name, variant_name]) => {
-            join(ps, format_args!("enum.{enum_name}.html#variant.{variant_name}"))
-        }
+        (ItemKind::Variant, [ps @ .., enum_name, variant_name]) => join(
+            ps,
+            format_args!("enum.{enum_name}.html#variant.{variant_name}"),
+        ),
         (ItemKind::Function, [ps @ .., name]) => join(ps, format_args!("fn.{name}.html")),
         (ItemKind::TypeAlias, [ps @ .., name]) => join(ps, format_args!("type.{name}.html")),
         (ItemKind::Constant, [ps @ .., name]) => join(ps, format_args!("constant.{name}.html")),
@@ -314,12 +332,14 @@ fn id_to_url<S: BuildHasher + Default>(
         (ItemKind::Macro, [ps @ .., name]) => join(ps, format_args!("macro.{name}.html")),
         (ItemKind::ProcAttribute, [ps @ .., name]) => join(ps, format_args!("attr.{name}.html")),
         (ItemKind::ProcDerive, [ps @ .., name]) => join(ps, format_args!("derive.{name}.html")),
-        (ItemKind::AssocConst, [ps @ .., trait_name, const_name]) => {
-            join(ps, format_args!("trait.{trait_name}.html#associatedconstant.{const_name}"))
-        }
-        (ItemKind::AssocType, [ps @ .., trait_name, type_name]) => {
-            join(ps, format_args!("trait.{trait_name}.html#associatedtype.{type_name}"))
-        }
+        (ItemKind::AssocConst, [ps @ .., trait_name, const_name]) => join(
+            ps,
+            format_args!("trait.{trait_name}.html#associatedconstant.{const_name}"),
+        ),
+        (ItemKind::AssocType, [ps @ .., trait_name, type_name]) => join(
+            ps,
+            format_args!("trait.{trait_name}.html#associatedtype.{type_name}"),
+        ),
         (ItemKind::Primitive, [ps @ .., name]) => join(ps, format_args!("primitive.{name}.html")),
         (item, path) => {
             eprintln!("unexpected intra-doc link item & path found; path={path:?}, item={item:?}");
@@ -359,4 +379,3 @@ fn item_summary<'doc, S: BuildHasher + Default>(
     }
     None
 }
-

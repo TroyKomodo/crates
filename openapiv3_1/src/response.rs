@@ -40,19 +40,29 @@ impl Responses {
 
 impl<S: responses_builder::State> ResponsesBuilder<S> {
     /// Add a [`Response`].
-    pub fn response(mut self, code: impl Into<String>, response: impl Into<RefOr<Response>>) -> Self {
+    pub fn response(
+        mut self,
+        code: impl Into<String>,
+        response: impl Into<RefOr<Response>>,
+    ) -> Self {
         self.responses.insert(code.into(), response.into());
 
         self
     }
 
     /// Add responses from an iterator over a pair of `(status_code, response): (String, Response)`.
-    pub fn responses_from_iter<I: IntoIterator<Item = (C, R)>, C: Into<String>, R: Into<RefOr<Response>>>(
+    pub fn responses_from_iter<
+        I: IntoIterator<Item = (C, R)>,
+        C: Into<String>,
+        R: Into<RefOr<Response>>,
+    >(
         mut self,
         iter: I,
     ) -> Self {
-        self.responses
-            .extend(iter.into_iter().map(|(code, response)| (code.into(), response.into())));
+        self.responses.extend(
+            iter.into_iter()
+                .map(|(code, response)| (code.into(), response.into())),
+        );
         self
     }
 }
@@ -70,7 +80,10 @@ where
 {
     fn from_iter<T: IntoIterator<Item = (C, R)>>(iter: T) -> Self {
         Self {
-            responses: IndexMap::from_iter(iter.into_iter().map(|(code, response)| (code.into(), response.into()))),
+            responses: IndexMap::from_iter(
+                iter.into_iter()
+                    .map(|(code, response)| (code.into(), response.into())),
+            ),
             ..Default::default()
         }
     }
@@ -146,17 +159,30 @@ impl<S: response_builder::State> ResponseBuilder<S> {
     }
 
     /// Add [`Content`] of the [`Response`] with content type e.g `application/json`.
-    pub fn contents<A: Into<String>, B: Into<Content>>(self, contents: impl IntoIterator<Item = (A, B)>) -> Self {
-        contents.into_iter().fold(self, |this, (a, b)| this.content(a, b))
+    pub fn contents<A: Into<String>, B: Into<Content>>(
+        self,
+        contents: impl IntoIterator<Item = (A, B)>,
+    ) -> Self {
+        contents
+            .into_iter()
+            .fold(self, |this, (a, b)| this.content(a, b))
     }
 
     /// Add response [`Header`].
-    pub fn headers<A: Into<String>, B: Into<Header>>(self, headers: impl IntoIterator<Item = (A, B)>) -> Self {
-        headers.into_iter().fold(self, |this, (a, b)| this.header(a, b))
+    pub fn headers<A: Into<String>, B: Into<Header>>(
+        self,
+        headers: impl IntoIterator<Item = (A, B)>,
+    ) -> Self {
+        headers
+            .into_iter()
+            .fold(self, |this, (a, b)| this.header(a, b))
     }
 
     /// Add link that can be followed from the response.
-    pub fn links<A: Into<String>, B: Into<RefOr<Link>>>(self, links: impl IntoIterator<Item = (A, B)>) -> Self {
+    pub fn links<A: Into<String>, B: Into<RefOr<Link>>>(
+        self,
+        links: impl IntoIterator<Item = (A, B)>,
+    ) -> Self {
         links.into_iter().fold(self, |this, (a, b)| this.link(a, b))
     }
 }

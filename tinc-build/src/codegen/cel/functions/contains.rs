@@ -3,7 +3,9 @@ use syn::parse_quote;
 use tinc_cel::CelValue;
 
 use super::Function;
-use crate::codegen::cel::compiler::{CompileError, CompiledExpr, CompilerCtx, ConstantCompiledExpr, RuntimeCompiledExpr};
+use crate::codegen::cel::compiler::{
+    CompileError, CompiledExpr, CompilerCtx, ConstantCompiledExpr, RuntimeCompiledExpr,
+};
 use crate::codegen::cel::types::CelType;
 use crate::types::{ProtoModifiedValueType, ProtoType, ProtoValueType};
 
@@ -39,7 +41,10 @@ impl Function for Contains {
                     ProtoModifiedValueType::Repeated(item) | ProtoModifiedValueType::Map(item, _),
                 )),
         }) = &this
-            && !matches!(item, ProtoValueType::Message { .. } | ProtoValueType::Enum(_))
+            && !matches!(
+                item,
+                ProtoValueType::Message { .. } | ProtoValueType::Enum(_)
+            )
         {
             let op = match &ty {
                 CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Repeated(_))) => {
@@ -99,7 +104,11 @@ mod tests {
 
     #[test]
     fn test_contains_syntax() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
         insta::assert_debug_snapshot!(Contains.compile(CompilerCtx::new(compiler.child(), None, &[])), @r#"
         Err(
@@ -137,11 +146,17 @@ mod tests {
     #[test]
     #[cfg(not(valgrind))]
     fn test_contains_runtime_string() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
-        let string_value =
-            CompiledExpr::runtime(CelType::Proto(ProtoType::Value(ProtoValueType::String)), parse_quote!(input));
+        let string_value = CompiledExpr::runtime(
+            CelType::Proto(ProtoType::Value(ProtoValueType::String)),
+            parse_quote!(input),
+        );
 
         let output = Contains
             .compile(CompilerCtx::new(
@@ -175,7 +190,11 @@ mod tests {
     #[test]
     #[cfg(not(valgrind))]
     fn test_contains_runtime_map() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
         let string_value = CompiledExpr::runtime(
@@ -232,11 +251,17 @@ mod tests {
     #[test]
     #[cfg(not(valgrind))]
     fn test_contains_runtime_repeated() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
         let string_value = CompiledExpr::runtime(
-            CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Repeated(ProtoValueType::String))),
+            CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Repeated(
+                ProtoValueType::String,
+            ))),
             parse_quote!(input),
         );
 

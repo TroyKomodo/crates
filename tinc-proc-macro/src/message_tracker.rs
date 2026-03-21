@@ -9,7 +9,9 @@ struct TincContainerOptions {
 }
 
 impl TincContainerOptions {
-    fn from_attributes<'a>(attrs: impl IntoIterator<Item = &'a syn::Attribute>) -> syn::Result<Self> {
+    fn from_attributes<'a>(
+        attrs: impl IntoIterator<Item = &'a syn::Attribute>,
+    ) -> syn::Result<Self> {
         let mut crate_ = None;
         let mut tagged = false;
         let mut with_non_finite_values = false;
@@ -76,7 +78,9 @@ struct TincFieldOptions {
 }
 
 impl TincFieldOptions {
-    fn from_attributes<'a>(attrs: impl IntoIterator<Item = &'a syn::Attribute>) -> syn::Result<Self> {
+    fn from_attributes<'a>(
+        attrs: impl IntoIterator<Item = &'a syn::Attribute>,
+    ) -> syn::Result<Self> {
         let mut enum_ = None;
         let mut oneof = false;
         let mut with_non_finite_values = false;
@@ -139,26 +143,42 @@ pub(crate) fn derive_message_tracker(input: TokenStream) -> TokenStream {
     match &input.data {
         syn::Data::Struct(data) => derive_message_tracker_struct(input.ident, opts, data),
         syn::Data::Enum(data) => derive_message_tracker_enum(input.ident, opts, data),
-        _ => syn::Error::new(input.span(), "Tracker can only be derived for structs or enums").into_compile_error(),
+        _ => syn::Error::new(
+            input.span(),
+            "Tracker can only be derived for structs or enums",
+        )
+        .into_compile_error(),
     }
 }
 
-fn derive_message_tracker_struct(ident: syn::Ident, opts: TincContainerOptions, data: &syn::DataStruct) -> TokenStream {
+fn derive_message_tracker_struct(
+    ident: syn::Ident,
+    opts: TincContainerOptions,
+    data: &syn::DataStruct,
+) -> TokenStream {
     let TincContainerOptions {
         crate_path,
         tagged,
         with_non_finite_values,
     } = opts;
     if tagged {
-        return syn::Error::new(ident.span(), "tagged can only be used on enums").into_compile_error();
+        return syn::Error::new(ident.span(), "tagged can only be used on enums")
+            .into_compile_error();
     }
     if with_non_finite_values {
-        return syn::Error::new(ident.span(), "with_non_finite_values can only be used on floats").into_compile_error();
+        return syn::Error::new(
+            ident.span(),
+            "with_non_finite_values can only be used on floats",
+        )
+        .into_compile_error();
     }
 
     let syn::Fields::Named(fields) = &data.fields else {
-        return syn::Error::new(ident.span(), "Tracker can only be derived for structs with named fields")
-            .into_compile_error();
+        return syn::Error::new(
+            ident.span(),
+            "Tracker can only be derived for structs with named fields",
+        )
+        .into_compile_error();
     };
 
     let tracker_ident = syn::Ident::new(&format!("{ident}Tracker"), ident.span());
@@ -183,11 +203,16 @@ fn derive_message_tracker_struct(ident: syn::Ident, opts: TincContainerOptions, 
                 ));
             }
             if oneof && with_non_finite_values {
-                return Err(syn::Error::new(f.span(), "oneof cannot be set with with_non_finite_values"));
+                return Err(syn::Error::new(
+                    f.span(),
+                    "oneof cannot be set with with_non_finite_values",
+                ));
             }
 
             let ty = match enum_path {
-                Some(enum_path) => quote! { <#ty as #crate_path::__private::EnumHelper>::Target<#enum_path> },
+                Some(enum_path) => {
+                    quote! { <#ty as #crate_path::__private::EnumHelper>::Target<#enum_path> }
+                }
                 None if oneof => quote! { <#ty as #crate_path::__private::OneOfHelper>::Target },
                 None if with_non_finite_values => {
                     quote! { <#ty as #crate_path::__private::FloatWithNonFinDesHelper>::Target }
@@ -230,7 +255,11 @@ fn derive_message_tracker_struct(ident: syn::Ident, opts: TincContainerOptions, 
     }
 }
 
-fn derive_message_tracker_enum(ident: syn::Ident, opts: TincContainerOptions, data: &syn::DataEnum) -> TokenStream {
+fn derive_message_tracker_enum(
+    ident: syn::Ident,
+    opts: TincContainerOptions,
+    data: &syn::DataEnum,
+) -> TokenStream {
     let TincContainerOptions {
         crate_path,
         tagged,
@@ -239,7 +268,11 @@ fn derive_message_tracker_enum(ident: syn::Ident, opts: TincContainerOptions, da
     let tracker_ident = syn::Ident::new(&format!("{ident}Tracker"), ident.span());
 
     if with_non_finite_values {
-        return syn::Error::new(ident.span(), "with_non_finite_values can only be used on floats").into_compile_error();
+        return syn::Error::new(
+            ident.span(),
+            "with_non_finite_values can only be used on floats",
+        )
+        .into_compile_error();
     }
 
     let variants = data

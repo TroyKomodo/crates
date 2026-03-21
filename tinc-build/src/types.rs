@@ -78,8 +78,12 @@ impl ProtoValueType {
             prost_reflect::Kind::Bool => ProtoValueType::Bool,
             prost_reflect::Kind::String => ProtoValueType::String,
             prost_reflect::Kind::Bytes => ProtoValueType::Bytes,
-            prost_reflect::Kind::Message(message) => ProtoValueType::from_proto_path(message.full_name()),
-            prost_reflect::Kind::Enum(enum_) => ProtoValueType::Enum(ProtoPath::new(enum_.full_name())),
+            prost_reflect::Kind::Message(message) => {
+                ProtoValueType::from_proto_path(message.full_name())
+            }
+            prost_reflect::Kind::Enum(enum_) => {
+                ProtoValueType::Enum(ProtoPath::new(enum_.full_name()))
+            }
         }
     }
 
@@ -464,7 +468,11 @@ pub(crate) struct ProtoTypeRegistry {
 }
 
 impl ProtoTypeRegistry {
-    pub(crate) fn new(mode: Mode, extern_paths: ExternPaths, floats_with_non_finite_vals: PathSet) -> Self {
+    pub(crate) fn new(
+        mode: Mode,
+        extern_paths: ExternPaths,
+        floats_with_non_finite_vals: PathSet,
+    ) -> Self {
         Self {
             messages: BTreeMap::new(),
             enums: BTreeMap::new(),

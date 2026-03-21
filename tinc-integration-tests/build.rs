@@ -6,8 +6,12 @@ fn main() {
     config
         .btree_map(".")
         .float_with_non_finite_vals(".floats.FloatMessageWithNonFinite")
-        .float_with_non_finite_vals(".floats.FloatMessageWithSomeNonFinite.f32_with_non_finite_serializer")
-        .float_with_non_finite_vals(".floats.FloatMessageWithSomeNonFinite.f64_with_non_finite_serializer")
+        .float_with_non_finite_vals(
+            ".floats.FloatMessageWithSomeNonFinite.f32_with_non_finite_serializer",
+        )
+        .float_with_non_finite_vals(
+            ".floats.FloatMessageWithSomeNonFinite.f64_with_non_finite_serializer",
+        )
         .float_with_non_finite_vals(".expressions.FloatExpressions")
         .float_with_non_finite_vals(".expressions.DoubleExpressions");
 

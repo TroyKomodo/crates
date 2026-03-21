@@ -2,7 +2,9 @@ use syn::parse_quote;
 use tinc_cel::CelValue;
 
 use super::Function;
-use crate::codegen::cel::compiler::{CompileError, CompiledExpr, CompilerCtx, ConstantCompiledExpr};
+use crate::codegen::cel::compiler::{
+    CompileError, CompiledExpr, CompilerCtx, ConstantCompiledExpr,
+};
 use crate::codegen::cel::types::CelType;
 use crate::types::{ProtoType, ProtoValueType};
 
@@ -32,15 +34,22 @@ impl Function for Matches {
             value: CelValue::String(regex),
         }) = ctx.resolve(&ctx.args[0])?.into_cel()?
         else {
-            return Err(CompileError::syntax("regex must be known at compile time string", self));
+            return Err(CompileError::syntax(
+                "regex must be known at compile time string",
+                self,
+            ));
         };
 
         let regex = regex.as_ref();
         if regex.is_empty() {
-            return Err(CompileError::syntax("regex cannot be an empty string", self));
+            return Err(CompileError::syntax(
+                "regex cannot be an empty string",
+                self,
+            ));
         }
 
-        let re = regex::Regex::new(regex).map_err(|err| CompileError::syntax(format!("bad regex {err}"), self))?;
+        let re = regex::Regex::new(regex)
+            .map_err(|err| CompileError::syntax(format!("bad regex {err}"), self))?;
 
         let this = this.clone().into_cel()?;
 
@@ -82,7 +91,11 @@ mod tests {
 
     #[test]
     fn test_matches_syntax() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
         insta::assert_debug_snapshot!(Matches.compile(CompilerCtx::new(compiler.child(), None, &[])), @r#"
         Err(
@@ -131,11 +144,17 @@ mod tests {
     #[test]
     #[cfg(not(valgrind))]
     fn test_matches_runtime_string() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
-        let string_value =
-            CompiledExpr::runtime(CelType::Proto(ProtoType::Value(ProtoValueType::String)), parse_quote!(input));
+        let string_value = CompiledExpr::runtime(
+            CelType::Proto(ProtoType::Value(ProtoValueType::String)),
+            parse_quote!(input),
+        );
 
         let output = Matches
             .compile(CompilerCtx::new(

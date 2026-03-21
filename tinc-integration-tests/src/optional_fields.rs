@@ -1,4 +1,4 @@
-use tinc::__private::{TrackerFor, TrackerSharedState, TincValidate, deserialize_tracker_target};
+use tinc::__private::{TincValidate, TrackerFor, TrackerSharedState, deserialize_tracker_target};
 
 mod pb {
     #![allow(clippy::all)]

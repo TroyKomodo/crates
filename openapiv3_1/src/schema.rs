@@ -70,7 +70,9 @@ pub struct Components {
 impl Components {
     /// Construct a new [`Components`].
     pub fn new() -> Self {
-        Self { ..Default::default() }
+        Self {
+            ..Default::default()
+        }
     }
 
     /// Add [`SecurityScheme`] to [`Components`].
@@ -78,8 +80,13 @@ impl Components {
     /// Accepts two arguments where first is the name of the [`SecurityScheme`]. This is later when
     /// referenced by [`SecurityRequirement`]s. Second parameter is the [`SecurityScheme`].
     ///
-    pub fn add_security_scheme<N: Into<String>, S: Into<SecurityScheme>>(&mut self, name: N, security_scheme: S) {
-        self.security_schemes.insert(name.into(), security_scheme.into());
+    pub fn add_security_scheme<N: Into<String>, S: Into<SecurityScheme>>(
+        &mut self,
+        name: N,
+        security_scheme: S,
+    ) {
+        self.security_schemes
+            .insert(name.into(), security_scheme.into());
     }
 
     /// Add iterator of [`SecurityScheme`]s to [`Components`].
@@ -90,8 +97,11 @@ impl Components {
         &mut self,
         schemas: impl IntoIterator<Item = (N, S)>,
     ) {
-        self.security_schemes
-            .extend(schemas.into_iter().map(|(name, item)| (name.into(), item.into())));
+        self.security_schemes.extend(
+            schemas
+                .into_iter()
+                .map(|(name, item)| (name.into(), item.into())),
+        );
     }
 
     /// Add [`Schema`] to [`Components`].
@@ -108,9 +118,15 @@ impl Components {
     /// referenced by [`Ref::ref_location`]s. Second parameter is the [`Schema`].
     ///
     /// [requirement]: ../security/struct.SecurityRequirement.html
-    pub fn add_schemas_from_iter<N: Into<String>, S: Into<Schema>>(&mut self, schemas: impl IntoIterator<Item = (N, S)>) {
-        self.schemas
-            .extend(schemas.into_iter().map(|(name, item)| (name.into(), item.into())));
+    pub fn add_schemas_from_iter<N: Into<String>, S: Into<Schema>>(
+        &mut self,
+        schemas: impl IntoIterator<Item = (N, S)>,
+    ) {
+        self.schemas.extend(
+            schemas
+                .into_iter()
+                .map(|(name, item)| (name.into(), item.into())),
+        );
     }
 }
 
@@ -144,8 +160,11 @@ impl<S: components_builder::State> ComponentsBuilder<S> {
         mut self,
         schemas: I,
     ) -> Self {
-        self.schemas
-            .extend(schemas.into_iter().map(|(name, schema)| (name.into(), schema.into())));
+        self.schemas.extend(
+            schemas
+                .into_iter()
+                .map(|(name, schema)| (name.into(), schema.into())),
+        );
 
         self
     }
@@ -154,7 +173,11 @@ impl<S: components_builder::State> ComponentsBuilder<S> {
     ///
     /// Method accepts tow arguments; `name` of the reusable response and `response` which is the
     /// reusable response itself.
-    pub fn response<S2: Into<String>, R: Into<RefOr<Response>>>(mut self, name: S2, response: R) -> Self {
+    pub fn response<S2: Into<String>, R: Into<RefOr<Response>>>(
+        mut self,
+        name: S2,
+        response: R,
+    ) -> Self {
         self.responses.insert(name.into(), response.into());
         self
     }
@@ -163,12 +186,19 @@ impl<S: components_builder::State> ComponentsBuilder<S> {
     ///
     /// Like the [`ComponentsBuilder::schemas_from_iter`] this allows adding multiple responses by
     /// any iterator what returns tuples of (name, response) values.
-    pub fn responses_from_iter<I: IntoIterator<Item = (S2, R)>, S2: Into<String>, R: Into<RefOr<Response>>>(
+    pub fn responses_from_iter<
+        I: IntoIterator<Item = (S2, R)>,
+        S2: Into<String>,
+        R: Into<RefOr<Response>>,
+    >(
         mut self,
         responses: I,
     ) -> Self {
-        self.responses
-            .extend(responses.into_iter().map(|(name, response)| (name.into(), response.into())));
+        self.responses.extend(
+            responses
+                .into_iter()
+                .map(|(name, response)| (name.into(), response.into())),
+        );
 
         self
     }
@@ -179,8 +209,13 @@ impl<S: components_builder::State> ComponentsBuilder<S> {
     /// referenced by [`SecurityRequirement`][requirement]s. Second parameter is the [`SecurityScheme`].
     ///
     /// [requirement]: ../security/struct.SecurityRequirement.html
-    pub fn security_scheme<N: Into<String>, S2: Into<SecurityScheme>>(mut self, name: N, security_scheme: S2) -> Self {
-        self.security_schemes.insert(name.into(), security_scheme.into());
+    pub fn security_scheme<N: Into<String>, S2: Into<SecurityScheme>>(
+        mut self,
+        name: N,
+        security_scheme: S2,
+    ) -> Self {
+        self.security_schemes
+            .insert(name.into(), security_scheme.into());
 
         self
     }
@@ -257,13 +292,22 @@ impl Discriminator {
     ///     ("cat","#/components/schemas/Cat")
     /// ]);
     /// ```
-    pub fn with_mapping<P: Into<String>, M: IntoIterator<Item = (K, V)>, K: Into<String>, V: Into<String>>(
+    pub fn with_mapping<
+        P: Into<String>,
+        M: IntoIterator<Item = (K, V)>,
+        K: Into<String>,
+        V: Into<String>,
+    >(
         property_name: P,
         mapping: M,
     ) -> Self {
         Self {
             property_name: property_name.into(),
-            mapping: IndexMap::from_iter(mapping.into_iter().map(|(key, val)| (key.into(), val.into()))),
+            mapping: IndexMap::from_iter(
+                mapping
+                    .into_iter()
+                    .map(|(key, val)| (key.into(), val.into())),
+            ),
             ..Default::default()
         }
     }
@@ -607,7 +651,10 @@ pub struct Object {
     pub min_contains: Option<u64>,
     /// The `additionalProperties` keyword defines the schema for object properties not explicitly listed.
     /// <https://www.learnjsonschema.com/2020-12/applicator/additionalProperties/>
-    #[serde(rename = "additionalProperties", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "additionalProperties",
+        skip_serializing_if = "Option::is_none"
+    )]
     #[is_empty(if = "is_empty::is_option_really_empty")]
     pub additional_properties: Option<Schema>,
     /// The `definitions` section holds reusable schema definitions for reference.
@@ -618,7 +665,10 @@ pub struct Object {
     pub definitions: IndexMap<String, Schema>,
     /// The `patternProperties` keyword maps regex patterns to schemas for matching property names.
     /// <https://www.learnjsonschema.com/2020-12/applicator/patternProperties/>
-    #[serde(rename = "patternProperties", skip_serializing_if = "IndexMap::is_empty")]
+    #[serde(
+        rename = "patternProperties",
+        skip_serializing_if = "IndexMap::is_empty"
+    )]
     #[builder(default)]
     #[is_empty(if = "IndexMap::is_empty")]
     pub pattern_properties: IndexMap<String, Schema>,
@@ -692,7 +742,10 @@ pub struct Object {
     pub unevaluated_items: Option<Schema>,
     /// The `unevaluatedProperties` keyword applies schemas to properties not covered by `properties` or pattern-based keywords.
     /// <https://www.learnjsonschema.com/2020-12/applicator/unevaluatedProperties/>
-    #[serde(rename = "unevaluatedProperties", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "unevaluatedProperties",
+        skip_serializing_if = "Option::is_none"
+    )]
     #[is_empty(if = "is_empty::is_option_really_empty")]
     pub unevaluated_properties: Option<Schema>,
     /// The `discriminator` keyword provides object property-based type differentiation (OpenAPI).
@@ -718,7 +771,10 @@ impl From<Ref> for Object {
 
 impl<S: object_builder::State> ObjectBuilder<S> {
     /// Extend the properties using the iterator of `(name, schema)`
-    pub fn properties<P: Into<String>, C: Into<Schema>>(mut self, properties: impl IntoIterator<Item = (P, C)>) -> Self {
+    pub fn properties<P: Into<String>, C: Into<Schema>>(
+        mut self,
+        properties: impl IntoIterator<Item = (P, C)>,
+    ) -> Self {
         self.properties
             .extend(properties.into_iter().map(|(p, s)| (p.into(), s.into())));
         self
@@ -766,13 +822,20 @@ impl<S: object_builder::State> ObjectBuilder<S> {
 
     /// Add a singular item into the `enum` array
     pub fn enum_value(mut self, enum_value: impl Into<serde_json::Value>) -> Self {
-        self.enum_values.get_or_insert_default().push(enum_value.into());
+        self.enum_values
+            .get_or_insert_default()
+            .push(enum_value.into());
         self
     }
 
     /// Extend the `enum` array using an iterator of items
-    pub fn enum_values<E: Into<serde_json::Value>>(self, enum_values: impl IntoIterator<Item = E>) -> Self {
-        enum_values.into_iter().fold(self, |this, e| this.enum_value(e))
+    pub fn enum_values<E: Into<serde_json::Value>>(
+        self,
+        enum_values: impl IntoIterator<Item = E>,
+    ) -> Self {
+        enum_values
+            .into_iter()
+            .fold(self, |this, e| this.enum_value(e))
     }
 
     /// Add a single field into the `required` array
@@ -793,14 +856,19 @@ impl<S: object_builder::State> ObjectBuilder<S> {
     }
 
     /// Extend the `examples` array using an iterator of examples.
-    pub fn examples<E: Into<serde_json::Value>>(self, examples: impl IntoIterator<Item = E>) -> Self {
+    pub fn examples<E: Into<serde_json::Value>>(
+        self,
+        examples: impl IntoIterator<Item = E>,
+    ) -> Self {
         examples.into_iter().fold(self, |this, e| this.example(e))
     }
 }
 
 impl<S: object_builder::IsComplete> ObjectBuilder<S> {
     /// Convert the object into an array of this type
-    pub fn to_array(self) -> ObjectBuilder<object_builder::SetItems<object_builder::SetSchemaType>> {
+    pub fn to_array(
+        self,
+    ) -> ObjectBuilder<object_builder::SetItems<object_builder::SetSchemaType>> {
         Object::builder().schema_type(Type::Array).items(self)
     }
 }
@@ -959,7 +1027,10 @@ impl Object {
             schema.optimize();
         }
 
-        self.all_of = all_ofs.into_iter().filter(|schema| !schema.is_empty()).collect();
+        self.all_of = all_ofs
+            .into_iter()
+            .filter(|schema| !schema.is_empty())
+            .collect();
         dedupe_array(&mut self.examples);
         dedupe_array(&mut self.required);
         if let Some(_enum) = &mut self.enum_values {
@@ -1185,14 +1256,20 @@ fn merge_array_union<T: PartialEq>(value: &mut Vec<T>, other: &mut Vec<T>) {
     value.retain(|v| other.contains(v));
 }
 
-fn merge_array_union_optional<T: PartialEq>(value: &mut Option<Vec<T>>, other: &mut Option<Vec<T>>) {
+fn merge_array_union_optional<T: PartialEq>(
+    value: &mut Option<Vec<T>>,
+    other: &mut Option<Vec<T>>,
+) {
     merge_array_union(value.as_mut().unwrap(), other.as_mut().unwrap());
     if other.as_ref().is_some_and(|o| o.is_empty()) {
         other.take();
     }
 }
 
-fn merge_array_combine_optional<T: PartialEq>(value: &mut Option<Vec<T>>, other: &mut Option<Vec<T>>) {
+fn merge_array_combine_optional<T: PartialEq>(
+    value: &mut Option<Vec<T>>,
+    other: &mut Option<Vec<T>>,
+) {
     merge_array_combine(value.as_mut().unwrap(), other.as_mut().unwrap());
     if other.as_ref().is_some_and(|o| o.is_empty()) {
         other.take();
@@ -1226,7 +1303,8 @@ fn merge_type(value: &mut Option<Types>, other: &mut Option<Types>) {
         (Types::Multi(s), Types::Multi(ref mut o)) => {
             merge_array_union(s, o);
         }
-        (&mut Types::Single(s), Types::Multi(ref o)) | (&mut Types::Multi(ref o), Types::Single(s)) => {
+        (&mut Types::Single(s), Types::Multi(ref o))
+        | (&mut Types::Multi(ref o), Types::Single(s)) => {
             if o.contains(&s) {
                 value.replace(Types::Single(s));
             } else {
@@ -1408,7 +1486,9 @@ mod tests {
                                 )
                                 .property(
                                     "name",
-                                    Object::builder().schema_type(Type::String).description("Name of credential"),
+                                    Object::builder()
+                                        .schema_type(Type::String)
+                                        .description("Name of credential"),
                                 )
                                 .property(
                                     "status",
@@ -1418,8 +1498,17 @@ mod tests {
                                         .description("Credential status")
                                         .enum_values(["Active", "NotActive", "Locked", "Expired"]),
                                 )
-                                .property("history", Schema::from(Ref::from_schema_name("UpdateHistory")).to_array())
-                                .property("tags", Object::builder().schema_type(Type::String).build().to_array()),
+                                .property(
+                                    "history",
+                                    Schema::from(Ref::from_schema_name("UpdateHistory")).to_array(),
+                                )
+                                .property(
+                                    "tags",
+                                    Object::builder()
+                                        .schema_type(Type::String)
+                                        .build()
+                                        .to_array(),
+                                ),
                         ),
                     )
                     .build(),
@@ -1452,7 +1541,12 @@ mod tests {
 
         let id = credential.get("id").unwrap().as_object().unwrap();
         assert_eq!(
-            id.get("default").unwrap().as_number().unwrap().as_i64().unwrap(),
+            id.get("default")
+                .unwrap()
+                .as_number()
+                .unwrap()
+                .as_i64()
+                .unwrap(),
             1,
             "components.schemas.Credential.properties.id.default did not match"
         );
@@ -1541,7 +1635,9 @@ mod tests {
             )
             .property(
                 "name",
-                Object::builder().schema_type(Type::String).description("Name of credential"),
+                Object::builder()
+                    .schema_type(Type::String)
+                    .description("Name of credential"),
             )
             .property(
                 "status",
@@ -1551,8 +1647,14 @@ mod tests {
                     .description("Credential status")
                     .enum_values(["Active", "NotActive", "Locked", "Expired"]),
             )
-            .property("history", Schema::from(Ref::from_schema_name("UpdateHistory")).to_array())
-            .property("tags", Object::builder().schema_type(Type::String).to_array())
+            .property(
+                "history",
+                Schema::from(Ref::from_schema_name("UpdateHistory")).to_array(),
+            )
+            .property(
+                "tags",
+                Object::builder().schema_type(Type::String).to_array(),
+            )
             .build();
 
         assert_eq!(
@@ -1610,7 +1712,10 @@ mod tests {
 
     #[test]
     fn test_object_with_title() {
-        let json_value = Object::builder().schema_type(Type::Object).title("SomeName").build();
+        let json_value = Object::builder()
+            .schema_type(Type::Object)
+            .title("SomeName")
+            .build();
         assert_json_snapshot!(json_value, @r#"
         {
           "title": "SomeName",
@@ -1658,7 +1763,10 @@ mod tests {
             .to_array()
             .build();
 
-        assert!(matches!(array.schema_type, Some(Types::Single(Type::Array))));
+        assert!(matches!(
+            array.schema_type,
+            Some(Types::Single(Type::Array))
+        ));
     }
 
     #[test]
@@ -1677,7 +1785,10 @@ mod tests {
             )
             .build();
 
-        assert!(matches!(array.schema_type, Some(Types::Single(Type::Array))));
+        assert!(matches!(
+            array.schema_type,
+            Some(Types::Single(Type::Array))
+        ));
     }
 
     #[test]
@@ -1691,7 +1802,10 @@ mod tests {
                         .required(["name"]),
                 ),
             )])
-            .responses_from_iter(vec![("200", Response::builder().description("Okay").build())])
+            .responses_from_iter(vec![(
+                "200",
+                Response::builder().description("Okay").build(),
+            )])
             .security_scheme(
                 "TLS",
                 SecurityScheme::MutualTls {
@@ -1703,7 +1817,8 @@ mod tests {
 
         let serialized_components = serde_json::to_string(&components).unwrap();
 
-        let deserialized_components: Components = serde_json::from_str(serialized_components.as_str()).unwrap();
+        let deserialized_components: Components =
+            serde_json::from_str(serialized_components.as_str()).unwrap();
 
         assert_eq!(
             serialized_components,
@@ -1719,7 +1834,8 @@ mod tests {
             .build();
 
         let serialized_components = serde_json::to_string(&prop).unwrap();
-        let deserialized_components: Object = serde_json::from_str(serialized_components.as_str()).unwrap();
+        let deserialized_components: Object =
+            serde_json::from_str(serialized_components.as_str()).unwrap();
 
         assert_eq!(
             serialized_components,
@@ -1732,7 +1848,8 @@ mod tests {
         let prop = Object::builder().schema_type(Type::String).build();
 
         let serialized_components = serde_json::to_string(&prop).unwrap();
-        let deserialized_components: Object = serde_json::from_str(serialized_components.as_str()).unwrap();
+        let deserialized_components: Object =
+            serde_json::from_str(serialized_components.as_str()).unwrap();
 
         assert_eq!(
             serialized_components,
@@ -1765,8 +1882,13 @@ mod tests {
                 "test",
                 Object::builder()
                     .any_ofs([
-                        Object::builder().property("element", Ref::new("#/test")).build().to_array(),
-                        Object::builder().property("foobar", Ref::new("#/foobar")).build(),
+                        Object::builder()
+                            .property("element", Ref::new("#/test"))
+                            .build()
+                            .to_array(),
+                        Object::builder()
+                            .property("foobar", Ref::new("#/foobar"))
+                            .build(),
                     ])
                     .build(),
             )
@@ -1808,7 +1930,10 @@ mod tests {
 
     #[test]
     fn serialize_deserialize_schema_array_builder() {
-        let ref_or_schema = Object::builder().property("element", Ref::new("#/test")).build().to_array();
+        let ref_or_schema = Object::builder()
+            .property("element", Ref::new("#/test"))
+            .build()
+            .to_array();
 
         let json_str = serde_json::to_string(&ref_or_schema).expect("");
         println!("----------------------------");
@@ -1847,8 +1972,9 @@ mod tests {
         let schema = Object::builder()
             .property(
                 "map",
-                Object::builder()
-                    .additional_properties(Object::builder().property("name", Object::builder().schema_type(Type::String))),
+                Object::builder().additional_properties(
+                    Object::builder().property("name", Object::builder().schema_type(Type::String)),
+                ),
             )
             .build();
 
@@ -1894,7 +2020,9 @@ mod tests {
 
     #[test]
     fn serialize_deserialize_object_with_multiple_schema_types() {
-        let object = Object::builder().schema_type(vec![Type::Object, Type::Null]).build();
+        let object = Object::builder()
+            .schema_type(vec![Type::Object, Type::Null])
+            .build();
 
         let json_str = serde_json::to_string(&object).unwrap();
         println!("----------------------------");
@@ -1912,7 +2040,8 @@ mod tests {
     #[test]
     fn object_with_extensions() {
         let expected = json!("value");
-        let extensions = extensions::Extensions::default().add("x-some-extension", expected.clone());
+        let extensions =
+            extensions::Extensions::default().add("x-some-extension", expected.clone());
         let json_value = Object::builder().extensions(extensions).build();
 
         let value = serde_json::to_value(&json_value).unwrap();
@@ -1922,7 +2051,8 @@ mod tests {
     #[test]
     fn array_with_extensions() {
         let expected = json!("value");
-        let extensions = extensions::Extensions::default().add("x-some-extension", expected.clone());
+        let extensions =
+            extensions::Extensions::default().add("x-some-extension", expected.clone());
         let json_value = Object::builder().extensions(extensions).to_array().build();
 
         let value = serde_json::to_value(&json_value).unwrap();
@@ -1932,7 +2062,8 @@ mod tests {
     #[test]
     fn oneof_with_extensions() {
         let expected = json!("value");
-        let extensions = extensions::Extensions::default().add("x-some-extension", expected.clone());
+        let extensions =
+            extensions::Extensions::default().add("x-some-extension", expected.clone());
         let json_value = Object::builder()
             .one_of(Object::builder().extensions(extensions).build())
             .build();
@@ -1944,7 +2075,8 @@ mod tests {
     #[test]
     fn allof_with_extensions() {
         let expected = json!("value");
-        let extensions = extensions::Extensions::default().add("x-some-extension", expected.clone());
+        let extensions =
+            extensions::Extensions::default().add("x-some-extension", expected.clone());
         let json_value = Object::builder()
             .all_of(Object::builder().extensions(extensions).build())
             .build();
@@ -1956,7 +2088,8 @@ mod tests {
     #[test]
     fn anyof_with_extensions() {
         let expected = json!("value");
-        let extensions = extensions::Extensions::default().add("x-some-extension", expected.clone());
+        let extensions =
+            extensions::Extensions::default().add("x-some-extension", expected.clone());
         let json_value = Object::builder()
             .any_of(Object::builder().extensions(extensions).build())
             .build();
@@ -2081,7 +2214,10 @@ mod tests {
         let not_format_a = Schema::object(
             Object::builder()
                 .not(Schema::object(
-                    Object::builder().schema_type(Type::String).format("email").build(),
+                    Object::builder()
+                        .schema_type(Type::String)
+                        .format("email")
+                        .build(),
                 ))
                 .build(),
         );
@@ -2089,7 +2225,10 @@ mod tests {
         let not_format_b = Schema::object(
             Object::builder()
                 .not(Schema::object(
-                    Object::builder().schema_type(Type::String).format("date-time").build(),
+                    Object::builder()
+                        .schema_type(Type::String)
+                        .format("date-time")
+                        .build(),
                 ))
                 .build(),
         );
@@ -2097,7 +2236,10 @@ mod tests {
         let not_format_c = Schema::object(
             Object::builder()
                 .not(Schema::object(
-                    Object::builder().schema_type(Type::String).format("ipv4").build(),
+                    Object::builder()
+                        .schema_type(Type::String)
+                        .format("ipv4")
+                        .build(),
                 ))
                 .build(),
         );

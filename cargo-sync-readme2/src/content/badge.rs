@@ -41,7 +41,9 @@ pub fn create(package: &Package) -> String {
         badges.push(format!("![Crates.io Downloads](https://img.shields.io/crates/dv/{name}/{version}.svg?&label=downloads&style={badge_style})"));
     }
 
-    let repository = repository.as_ref().and_then(|r| r.strip_prefix("https://github.com/"));
+    let repository = repository
+        .as_ref()
+        .and_then(|r| r.strip_prefix("https://github.com/"));
 
     match (&metadata.badges.codecov, repository) {
         (Codecov::Simple(false), _) => {}
@@ -56,7 +58,12 @@ pub fn create(package: &Package) -> String {
         }
     }
 
-    for CustomBadge { link, name: text, url } in &metadata.custom_badges {
+    for CustomBadge {
+        link,
+        name: text,
+        url,
+    } in &metadata.custom_badges
+    {
         let badge = format!("![{text}]({url})");
         if let Some(link) = link {
             badges.push(format!("[{badge}]({link})"))
@@ -67,4 +74,3 @@ pub fn create(package: &Package) -> String {
 
     badges.join("\n")
 }
-

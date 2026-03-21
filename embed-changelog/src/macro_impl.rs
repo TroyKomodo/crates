@@ -11,8 +11,9 @@ struct ChangeLogEntry<'a> {
     lines: Vec<&'a str>,
 }
 
-static HEADING_REGEX: std::sync::LazyLock<regex::Regex> =
-    std::sync::LazyLock::new(|| regex::Regex::new(r"^## \[([^]]+)\](?:\(([^)]+)\))?(?: - (\d{4}-\d{2}-\d{2}))?$").unwrap());
+static HEADING_REGEX: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
+    regex::Regex::new(r"^## \[([^]]+)\](?:\(([^)]+)\))?(?: - (\d{4}-\d{2}-\d{2}))?$").unwrap()
+});
 
 fn parse_changelog(changelog: &str) -> Result<Vec<ChangeLogEntry<'_>>, String> {
     let mut entries = Vec::new();
@@ -98,9 +99,10 @@ pub(crate) fn changelog(_: TokenStream, item: TokenStream) -> syn::Result<TokenS
 
     let manifest_dir = std::env::var_os("CARGO_MANIFEST_DIR").unwrap();
     let path = std::path::PathBuf::from(manifest_dir);
-    let changelog =
-        std::fs::read_to_string(path.join("CHANGELOG.md")).map_err(|err| syn::Error::new(ident.span(), err.to_string()))?;
-    let entries = parse_changelog(&changelog).map_err(|err| syn::Error::new(ident.span(), err.to_string()))?;
+    let changelog = std::fs::read_to_string(path.join("CHANGELOG.md"))
+        .map_err(|err| syn::Error::new(ident.span(), err.to_string()))?;
+    let entries = parse_changelog(&changelog)
+        .map_err(|err| syn::Error::new(ident.span(), err.to_string()))?;
 
     let entries = entries.into_iter().map(
         |ChangeLogEntry {

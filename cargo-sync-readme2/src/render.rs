@@ -4,11 +4,13 @@ use anyhow::Context;
 
 use crate::content::Content;
 
-static MARKER_REGEX: std::sync::LazyLock<regex::Regex> =
-    std::sync::LazyLock::new(|| regex::Regex::new(r#"<!-- sync-readme (\w+)?\s*(\[\[|\]\])? -->"#).expect("bad regex"));
+static MARKER_REGEX: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
+    regex::Regex::new(r#"<!-- sync-readme (\w+)?\s*(\[\[|\]\])? -->"#).expect("bad regex")
+});
 
-static CLOSE_MARKER_REGEX: std::sync::LazyLock<regex::Regex> =
-    std::sync::LazyLock::new(|| regex::Regex::new(r#"<!-- sync-readme \]\] -->"#).expect("bad regex"));
+static CLOSE_MARKER_REGEX: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
+    regex::Regex::new(r#"<!-- sync-readme \]\] -->"#).expect("bad regex")
+});
 
 #[derive(Debug)]
 enum MarkerCategory {
@@ -75,7 +77,11 @@ pub fn render(readme: &str, content: &Content) -> anyhow::Result<String> {
             skip_until = end;
         }
 
-        markers.push(Marker { category, start, end });
+        markers.push(Marker {
+            category,
+            start,
+            end,
+        });
     }
 
     let mut readme_builder = String::new();
@@ -95,7 +101,12 @@ pub fn render(readme: &str, content: &Content) -> anyhow::Result<String> {
         .trim();
 
         if content.is_empty() {
-            writeln!(&mut readme_builder, "<!-- sync-readme {} -->", marker.category).expect("write failed");
+            writeln!(
+                &mut readme_builder,
+                "<!-- sync-readme {} -->",
+                marker.category
+            )
+            .expect("write failed");
         } else {
             writeln!(
                 &mut readme_builder,
@@ -110,4 +121,3 @@ pub fn render(readme: &str, content: &Content) -> anyhow::Result<String> {
 
     Ok(readme_builder)
 }
-

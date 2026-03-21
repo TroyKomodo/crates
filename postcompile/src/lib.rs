@@ -8,7 +8,10 @@
 //!
 //! This is particularly useful when making snapshot tests of proc-macros, look
 //! below for an example with the `insta` crate.
-#![cfg_attr(feature = "docs", doc = "\n\nSee the [changelog][changelog] for a full release history.")]
+#![cfg_attr(
+    feature = "docs",
+    doc = "\n\nSee the [changelog][changelog] for a full release history."
+)]
 #![cfg_attr(feature = "docs", doc = "## Feature flags")]
 #![cfg_attr(feature = "docs", doc = document_features::document_features!())]
 //! ## Usage
@@ -214,7 +217,12 @@ fn cargo(config: &Config, manifest_path: &Path, subcommand: &str) -> Command {
     program.stderr(std::process::Stdio::piped());
     program.stdout(std::process::Stdio::piped());
 
-    let target_dir = if config.target_dir.as_ref().unwrap().ends_with(target_triple::TARGET) {
+    let target_dir = if config
+        .target_dir
+        .as_ref()
+        .unwrap()
+        .ends_with(target_triple::TARGET)
+    {
         config.target_dir.as_ref().unwrap().parent().unwrap()
     } else {
         config.target_dir.as_ref().unwrap()
@@ -226,7 +234,11 @@ fn cargo(config: &Config, manifest_path: &Path, subcommand: &str) -> Command {
 
     if !cfg!(trybuild_no_target)
         && !cfg!(postcompile_no_target)
-        && config.target_dir.as_ref().unwrap().ends_with(target_triple::TARGET)
+        && config
+            .target_dir
+            .as_ref()
+            .unwrap()
+            .ends_with(target_triple::TARGET)
     {
         program.arg("--target").arg(target_triple::TARGET);
     }
@@ -259,39 +271,53 @@ fn generate_cargo_toml(config: &Config, crate_name: &str) -> std::io::Result<(St
         .exec()
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))?;
 
-    let workspace_manifest = cargo_manifest::Manifest::from_path(metadata.workspace_root.join("Cargo.toml"))
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))?;
+    let workspace_manifest =
+        cargo_manifest::Manifest::from_path(metadata.workspace_root.join("Cargo.toml"))
+            .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))?;
 
     let manifest = cargo_manifest::Manifest::<cargo_manifest::Value, cargo_manifest::Value> {
         package: Some(cargo_manifest::Package {
-            publish: Some(cargo_manifest::MaybeInherited::Local(cargo_manifest::Publish::Flag(false))),
+            publish: Some(cargo_manifest::MaybeInherited::Local(
+                cargo_manifest::Publish::Flag(false),
+            )),
             edition: match config.edition.as_str() {
-                "2024" => Some(cargo_manifest::MaybeInherited::Local(cargo_manifest::Edition::E2024)),
-                "2021" => Some(cargo_manifest::MaybeInherited::Local(cargo_manifest::Edition::E2021)),
-                "2018" => Some(cargo_manifest::MaybeInherited::Local(cargo_manifest::Edition::E2018)),
-                "2015" => Some(cargo_manifest::MaybeInherited::Local(cargo_manifest::Edition::E2015)),
+                "2024" => Some(cargo_manifest::MaybeInherited::Local(
+                    cargo_manifest::Edition::E2024,
+                )),
+                "2021" => Some(cargo_manifest::MaybeInherited::Local(
+                    cargo_manifest::Edition::E2021,
+                )),
+                "2018" => Some(cargo_manifest::MaybeInherited::Local(
+                    cargo_manifest::Edition::E2018,
+                )),
+                "2015" => Some(cargo_manifest::MaybeInherited::Local(
+                    cargo_manifest::Edition::E2015,
+                )),
                 _ => match metadata
                     .packages
                     .iter()
                     .find(|p| p.name.as_ref() == config.package_name)
                     .map(|p| p.edition)
                 {
-                    Some(cargo_metadata::Edition::E2015) => {
-                        Some(cargo_manifest::MaybeInherited::Local(cargo_manifest::Edition::E2015))
-                    }
-                    Some(cargo_metadata::Edition::E2018) => {
-                        Some(cargo_manifest::MaybeInherited::Local(cargo_manifest::Edition::E2018))
-                    }
-                    Some(cargo_metadata::Edition::E2021) => {
-                        Some(cargo_manifest::MaybeInherited::Local(cargo_manifest::Edition::E2021))
-                    }
-                    Some(cargo_metadata::Edition::E2024) => {
-                        Some(cargo_manifest::MaybeInherited::Local(cargo_manifest::Edition::E2024))
-                    }
+                    Some(cargo_metadata::Edition::E2015) => Some(
+                        cargo_manifest::MaybeInherited::Local(cargo_manifest::Edition::E2015),
+                    ),
+                    Some(cargo_metadata::Edition::E2018) => Some(
+                        cargo_manifest::MaybeInherited::Local(cargo_manifest::Edition::E2018),
+                    ),
+                    Some(cargo_metadata::Edition::E2021) => Some(
+                        cargo_manifest::MaybeInherited::Local(cargo_manifest::Edition::E2021),
+                    ),
+                    Some(cargo_metadata::Edition::E2024) => Some(
+                        cargo_manifest::MaybeInherited::Local(cargo_manifest::Edition::E2024),
+                    ),
                     _ => None,
                 },
             },
-            ..cargo_manifest::Package::<cargo_manifest::Value>::new(crate_name.to_owned(), "0.1.0".into())
+            ..cargo_manifest::Package::<cargo_manifest::Value>::new(
+                crate_name.to_owned(),
+                "0.1.0".into(),
+            )
         }),
         workspace: Some(cargo_manifest::Workspace {
             default_members: None,
@@ -326,7 +352,9 @@ fn generate_cargo_toml(config: &Config, crate_name: &str) -> std::io::Result<(St
                             version: Some(version.clone()),
                             ..Default::default()
                         },
-                        cargo_manifest::Dependency::Inherited(_) => panic!("workspace deps cannot be inherited"),
+                        cargo_manifest::Dependency::Inherited(_) => {
+                            panic!("workspace deps cannot be inherited")
+                        }
                     };
 
                     if let Some(path) = dep.path.as_mut()
@@ -363,9 +391,15 @@ fn generate_cargo_toml(config: &Config, crate_name: &str) -> std::io::Result<(St
                     detail.version = Some(version);
                 }
 
-                detail.features.get_or_insert_default().extend(dep.features.iter().cloned());
+                detail
+                    .features
+                    .get_or_insert_default()
+                    .extend(dep.features.iter().cloned());
 
-                deps.insert(dep.name.clone(), cargo_manifest::Dependency::Detailed(detail));
+                deps.insert(
+                    dep.name.clone(),
+                    cargo_manifest::Dependency::Detailed(detail),
+                );
             }
 
             deps
@@ -388,7 +422,8 @@ fn generate_cargo_toml(config: &Config, crate_name: &str) -> std::io::Result<(St
     };
 
     Ok((
-        toml::to_string(&manifest).map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))?,
+        toml::to_string(&manifest)
+            .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))?,
         std::fs::read_to_string(metadata.workspace_root.join("Cargo.lock"))?,
     ))
 }
@@ -397,7 +432,10 @@ static TEST_TIME_RE: std::sync::LazyLock<regex::Regex> =
     std::sync::LazyLock::new(|| regex::Regex::new(r"\d+\.\d+s").expect("failed to compile regex"));
 
 /// Compiles the given tokens and returns the output.
-pub fn compile_custom(tokens: impl std::fmt::Display, config: &Config) -> std::io::Result<CompileOutput> {
+pub fn compile_custom(
+    tokens: impl std::fmt::Display,
+    config: &Config,
+) -> std::io::Result<CompileOutput> {
     let tokens = tokens.to_string();
     if let Ok(deps_manifest) = std::env::var("POSTCOMPILE_DEPS_MANIFEST") {
         return manifest_mode(deps_manifest, config, tokens);
@@ -428,12 +466,19 @@ pub fn compile_custom(tokens: impl std::fmt::Display, config: &Config) -> std::i
 
     let stdout = String::from_utf8(output.stdout).unwrap();
     let syn_file = syn::parse_file(&stdout);
-    let stdout = syn_file.as_ref().map(prettyplease::unparse).unwrap_or(stdout);
+    let stdout = syn_file
+        .as_ref()
+        .map(prettyplease::unparse)
+        .unwrap_or(stdout);
 
     let cleanup_output = |out: &[u8]| {
         let out = String::from_utf8_lossy(out);
         let tmp_dir = config.tmp_dir.as_ref().unwrap().display().to_string();
-        let main_relative = main_path.strip_prefix(&tmp_crate_path).unwrap().display().to_string();
+        let main_relative = main_path
+            .strip_prefix(&tmp_crate_path)
+            .unwrap()
+            .display()
+            .to_string();
         let main_path = main_path.display().to_string();
         TEST_TIME_RE
             .replace_all(out.as_ref(), "[ELAPSED]s")
@@ -476,7 +521,11 @@ pub fn compile_custom(tokens: impl std::fmt::Display, config: &Config) -> std::i
     Ok(result)
 }
 
-fn manifest_mode(deps_manifest_path: String, config: &Config, tokens: String) -> std::io::Result<CompileOutput> {
+fn manifest_mode(
+    deps_manifest_path: String,
+    config: &Config,
+    tokens: String,
+) -> std::io::Result<CompileOutput> {
     let deps_manifest = match std::fs::read_to_string(&deps_manifest_path) {
         Ok(o) => o,
         Err(err) => panic!("error opening file: {deps_manifest_path} {err}"),
@@ -490,13 +539,18 @@ fn manifest_mode(deps_manifest_path: String, config: &Config, tokens: String) ->
     let args: Vec<_> = manifest
         .direct
         .iter()
-        .map(|(name, file)| format!("--extern={name}={file}", file = current_dir.join(file).display()))
-        .chain(
-            manifest
-                .search
-                .iter()
-                .map(|search| format!("-Ldependency={search}", search = current_dir.join(search).display())),
-        )
+        .map(|(name, file)| {
+            format!(
+                "--extern={name}={file}",
+                file = current_dir.join(file).display()
+            )
+        })
+        .chain(manifest.search.iter().map(|search| {
+            format!(
+                "-Ldependency={search}",
+                search = current_dir.join(search).display()
+            )
+        }))
         .chain(manifest.extra_rustc_args.iter().cloned())
         .chain([
             "--crate-type=lib".into(),
@@ -511,7 +565,8 @@ fn manifest_mode(deps_manifest_path: String, config: &Config, tokens: String) ->
         ])
         .collect();
 
-    let tmp_dir = std::env::var("TEST_TMPDIR").expect("TEST_TMPDIR must be set when using manifest mode.");
+    let tmp_dir =
+        std::env::var("TEST_TMPDIR").expect("TEST_TMPDIR must be set when using manifest mode.");
     let name = config.function_name.replace("::", "__");
     let tmp_rs_path = Path::new(&tmp_dir).join(format!("{name}.rs"));
     write_tmp_file(&tokens, &tmp_rs_path);
@@ -526,11 +581,18 @@ fn manifest_mode(deps_manifest_path: String, config: &Config, tokens: String) ->
 
     let stdout = String::from_utf8(output.stdout).unwrap();
     let syn_file = syn::parse_file(&stdout);
-    let stdout = syn_file.as_ref().map(prettyplease::unparse).unwrap_or(stdout);
+    let stdout = syn_file
+        .as_ref()
+        .map(prettyplease::unparse)
+        .unwrap_or(stdout);
 
     let cleanup_output = |out: &[u8]| {
         let out = String::from_utf8_lossy(out);
-        let main_relative = tmp_rs_path.strip_prefix(&tmp_dir).unwrap().display().to_string();
+        let main_relative = tmp_rs_path
+            .strip_prefix(&tmp_dir)
+            .unwrap()
+            .display()
+            .to_string();
         let main_path = tmp_rs_path.display().to_string();
         TEST_TIME_RE
             .replace_all(out.as_ref(), "[ELAPSED]s")

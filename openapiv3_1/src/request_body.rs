@@ -48,8 +48,13 @@ impl<S: request_body_builder::State> RequestBodyBuilder<S> {
     }
 
     /// Add [`Content`] by content type e.g `application/json` to [`RequestBody`].
-    pub fn contents<T: Into<String>, C: Into<Content>>(self, contents: impl IntoIterator<Item = (T, C)>) -> Self {
-        contents.into_iter().fold(self, |this, (t, c)| this.content(t, c))
+    pub fn contents<T: Into<String>, C: Into<Content>>(
+        self,
+        contents: impl IntoIterator<Item = (T, C)>,
+    ) -> Self {
+        contents
+            .into_iter()
+            .fold(self, |this, (t, c)| this.content(t, c))
     }
 }
 
@@ -81,7 +86,10 @@ mod tests {
         let request_body = RequestBody::builder()
             .description("A sample requestBody")
             .required(true)
-            .content("application/json", Content::new(Some(Ref::from_schema_name("EmailPayload"))))
+            .content(
+                "application/json",
+                Content::new(Some(Ref::from_schema_name("EmailPayload"))),
+            )
             .build();
         assert_json_snapshot!(request_body);
     }

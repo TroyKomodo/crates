@@ -1,6 +1,8 @@
 use pulldown_cmark::{Event, Tag, TagEnd};
 
-pub(super) fn convert<'a, 'b>(events: impl IntoIterator<Item = Event<'a>> + 'b) -> impl Iterator<Item = Event<'a>> + 'b {
+pub(super) fn convert<'a, 'b>(
+    events: impl IntoIterator<Item = Event<'a>> + 'b,
+) -> impl Iterator<Item = Event<'a>> + 'b {
     use pulldown_cmark::HeadingLevel::*;
     events.into_iter().map(|mut event| {
         match &mut event {
@@ -19,4 +21,3 @@ pub(super) fn convert<'a, 'b>(events: impl IntoIterator<Item = Event<'a>> + 'b) 
         event
     })
 }
-

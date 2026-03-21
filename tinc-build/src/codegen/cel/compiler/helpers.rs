@@ -41,12 +41,14 @@ impl CompiledExpr {
             }) => CompiledExpr::Constant(ConstantCompiledExpr {
                 value: tinc_cel::CelValue::Bool(true),
             }),
-            CompiledExpr::Runtime(RuntimeCompiledExpr { expr, .. }) => CompiledExpr::Runtime(RuntimeCompiledExpr {
-                expr: parse_quote! {
-                    ::tinc::__private::cel::to_bool(#expr)
-                },
-                ty: CelType::Proto(ProtoType::Value(ProtoValueType::Bool)),
-            }),
+            CompiledExpr::Runtime(RuntimeCompiledExpr { expr, .. }) => {
+                CompiledExpr::Runtime(RuntimeCompiledExpr {
+                    expr: parse_quote! {
+                        ::tinc::__private::cel::to_bool(#expr)
+                    },
+                    ty: CelType::Proto(ProtoType::Value(ProtoValueType::Bool)),
+                })
+            }
             CompiledExpr::Constant(ConstantCompiledExpr {
                 value: CelValue::Enum(cel_enum),
             }) => CompiledExpr::Constant(ConstantCompiledExpr {
@@ -57,9 +59,11 @@ impl CompiledExpr {
                         .is_some_and(|e| e.variants.values().any(|v| v.value == cel_enum.value)),
                 ),
             }),
-            CompiledExpr::Constant(ConstantCompiledExpr { value }) => CompiledExpr::Constant(ConstantCompiledExpr {
-                value: tinc_cel::CelValue::Bool(value.to_bool()),
-            }),
+            CompiledExpr::Constant(ConstantCompiledExpr { value }) => {
+                CompiledExpr::Constant(ConstantCompiledExpr {
+                    value: tinc_cel::CelValue::Bool(value.to_bool()),
+                })
+            }
         }
     }
 
@@ -99,7 +103,8 @@ impl CompiledExpr {
             })),
             CompiledExpr::Runtime(RuntimeCompiledExpr {
                 expr,
-                ty: CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Map(key_ty, value_ty))),
+                ty:
+                    CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Map(key_ty, value_ty))),
             }) => {
                 let key_to_cel = CompiledExpr::Runtime(RuntimeCompiledExpr {
                     expr: parse_quote!(key),
@@ -197,7 +202,10 @@ impl CompiledExpr {
             }),
             // Currently any is not supported.
             CompiledExpr::Runtime(RuntimeCompiledExpr {
-                ty: ty @ CelType::Proto(ProtoType::Value(ProtoValueType::WellKnown(ProtoWellKnownType::Any))),
+                ty:
+                    ty @ CelType::Proto(ProtoType::Value(ProtoValueType::WellKnown(
+                        ProtoWellKnownType::Any,
+                    ))),
                 ..
             }) => Err(CompileError::TypeConversion {
                 ty: Box::new(ty),

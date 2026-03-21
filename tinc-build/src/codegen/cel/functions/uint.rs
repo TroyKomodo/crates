@@ -2,7 +2,9 @@ use syn::parse_quote;
 use tinc_cel::CelValue;
 
 use super::Function;
-use crate::codegen::cel::compiler::{CompileError, CompiledExpr, CompilerCtx, ConstantCompiledExpr, RuntimeCompiledExpr};
+use crate::codegen::cel::compiler::{
+    CompileError, CompiledExpr, CompilerCtx, ConstantCompiledExpr, RuntimeCompiledExpr,
+};
 use crate::codegen::cel::types::CelType;
 
 #[derive(Debug, Clone, Default)]
@@ -27,13 +29,17 @@ impl Function for UInt {
         }
 
         match this.into_cel()? {
-            CompiledExpr::Constant(ConstantCompiledExpr { value }) => Ok(CompiledExpr::Constant(ConstantCompiledExpr {
-                value: CelValue::cel_to_uint(value)?,
-            })),
-            CompiledExpr::Runtime(RuntimeCompiledExpr { expr, .. }) => Ok(CompiledExpr::Runtime(RuntimeCompiledExpr {
-                ty: CelType::CelValue,
-                expr: parse_quote!(::tinc::__private::cel::CelValue::cel_to_uint(#expr)?),
-            })),
+            CompiledExpr::Constant(ConstantCompiledExpr { value }) => {
+                Ok(CompiledExpr::Constant(ConstantCompiledExpr {
+                    value: CelValue::cel_to_uint(value)?,
+                }))
+            }
+            CompiledExpr::Runtime(RuntimeCompiledExpr { expr, .. }) => {
+                Ok(CompiledExpr::Runtime(RuntimeCompiledExpr {
+                    ty: CelType::CelValue,
+                    expr: parse_quote!(::tinc::__private::cel::CelValue::cel_to_uint(#expr)?),
+                }))
+            }
         }
     }
 }
@@ -54,7 +60,11 @@ mod tests {
 
     #[test]
     fn test_uint_syntax() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
         insta::assert_debug_snapshot!(UInt.compile(CompilerCtx::new(compiler.child(), None, &[])), @r#"
         Err(
@@ -94,11 +104,17 @@ mod tests {
     #[test]
     #[cfg(not(valgrind))]
     fn test_uint_runtime() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
-        let string_value =
-            CompiledExpr::runtime(CelType::Proto(ProtoType::Value(ProtoValueType::String)), parse_quote!(input));
+        let string_value = CompiledExpr::runtime(
+            CelType::Proto(ProtoType::Value(ProtoValueType::String)),
+            parse_quote!(input),
+        );
 
         let output = UInt
             .compile(CompilerCtx::new(compiler.child(), Some(string_value), &[]))

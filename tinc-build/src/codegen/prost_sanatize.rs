@@ -44,7 +44,12 @@ pub(crate) fn strip_enum_prefix(prefix: &str, name: &str) -> String {
     // If the next character after the stripped prefix is not
     // uppercase, then it means that we didn't have a true prefix -
     // for example, "Foo" should not be stripped from "Foobar".
-    let stripped = if stripped.chars().next().map(char::is_uppercase).unwrap_or(false) {
+    let stripped = if stripped
+        .chars()
+        .next()
+        .map(char::is_uppercase)
+        .unwrap_or(false)
+    {
         stripped
     } else {
         name

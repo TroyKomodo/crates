@@ -1033,7 +1033,9 @@ fn test_map_expressions_invalid() {
 fn test_message_expressions_valid() {
     let mut state = TrackerSharedState::default();
     let valid = pb::MessageExpressions {
-        message: Some(pb::message_expressions::SubMessage { name: "troy".into() }),
+        message: Some(pb::message_expressions::SubMessage {
+            name: "troy".into(),
+        }),
     };
 
     state.in_scope(|| valid.validate(None)).unwrap();
@@ -1096,7 +1098,9 @@ fn test_message_expressions_invalid() {
 fn test_repeated_message_expressions_valid() {
     let mut state = TrackerSharedState::default();
     let valid = pb::RepeatedMessageExpressions {
-        messages: vec![pb::repeated_message_expressions::SubMessage { name: "troy".into() }],
+        messages: vec![pb::repeated_message_expressions::SubMessage {
+            name: "troy".into(),
+        }],
     };
 
     state.in_scope(|| valid.validate(None)).unwrap();
@@ -1143,7 +1147,9 @@ fn test_map_message_expressions_valid() {
 
             map.insert(
                 "first".into(),
-                pb::map_message_expressions::SubMessage { name: "troy".into() },
+                pb::map_message_expressions::SubMessage {
+                    name: "troy".into(),
+                },
             );
 
             map
@@ -1167,7 +1173,10 @@ fn test_map_message_expressions_invalid() {
         messages: {
             let mut map = BTreeMap::new();
 
-            map.insert("first".into(), pb::map_message_expressions::SubMessage { name: "tr".into() });
+            map.insert(
+                "first".into(),
+                pb::map_message_expressions::SubMessage { name: "tr".into() },
+            );
 
             map
         },

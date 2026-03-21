@@ -7,8 +7,9 @@ use super::cel::compiler::{CompiledExpr, Compiler};
 use super::cel::types::CelType;
 use super::cel::{CelExpression, eval_message_fmt, functions};
 use crate::types::{
-    ProtoEnumType, ProtoFieldOptions, ProtoFieldSerdeOmittable, ProtoMessageField, ProtoMessageType, ProtoModifiedValueType,
-    ProtoOneOfType, ProtoType, ProtoTypeRegistry, ProtoValueType, ProtoVisibility, Tagged,
+    ProtoEnumType, ProtoFieldOptions, ProtoFieldSerdeOmittable, ProtoMessageField,
+    ProtoMessageType, ProtoModifiedValueType, ProtoOneOfType, ProtoType, ProtoTypeRegistry,
+    ProtoValueType, ProtoVisibility, Tagged,
 };
 
 fn handle_oneof(
@@ -215,8 +216,12 @@ fn handle_oneof(
                     .to_string();
 
                 if field.options.visibility.has_output() {
-                    let serialize_with = format!("::tinc::__private::serialize_enum::<{path_str}, _, _>");
-                    oneof_config.field_attribute(field_name, parse_quote!(#[serde(serialize_with = #serialize_with)]));
+                    let serialize_with =
+                        format!("::tinc::__private::serialize_enum::<{path_str}, _, _>");
+                    oneof_config.field_attribute(
+                        field_name,
+                        parse_quote!(#[serde(serialize_with = #serialize_with)]),
+                    );
                 }
 
                 oneof_config.field_attribute(field_name, parse_quote!(#[tinc(enum = #path_str)]));
@@ -238,7 +243,10 @@ fn handle_oneof(
                         );
                     }
                     if field.options.visibility.has_input() {
-                        oneof_config.field_attribute(field_name, parse_quote!(#[tinc(with_non_finite_values)]));
+                        oneof_config.field_attribute(
+                            field_name,
+                            parse_quote!(#[tinc(with_non_finite_values)]),
+                        );
                     }
                 }
             }
@@ -246,7 +254,9 @@ fn handle_oneof(
         }
     }
 
-    let message = registry.get_message(&oneof.message).expect("message not found");
+    let message = registry
+        .get_message(&oneof.message)
+        .expect("message not found");
 
     let oneof_path = oneof.rust_path(&message.package);
     let oneof_ident = oneof_path.segments.last().unwrap().ident.clone();
@@ -384,16 +394,22 @@ fn handle_message_field(
 
     message_config.field_attribute(field_name, parse_quote!(#[serde(rename = #serde_name)]));
 
-    let message = registry.get_message(&field.message).expect("message not found");
+    let message = registry
+        .get_message(&field.message)
+        .expect("message not found");
 
     let ident = quote::format_ident!("__field_{field_name}");
     if field.options.flatten {
         let flattened_ty_path = match &field.ty {
-            ProtoType::Modified(ProtoModifiedValueType::Optional(ProtoValueType::Message(path)))
-            | ProtoType::Value(ProtoValueType::Message(path)) => {
-                registry.resolve_rust_path(&message.package, path).expect("message not found")
+            ProtoType::Modified(ProtoModifiedValueType::Optional(ProtoValueType::Message(
+                path,
+            )))
+            | ProtoType::Value(ProtoValueType::Message(path)) => registry
+                .resolve_rust_path(&message.package, path)
+                .expect("message not found"),
+            ProtoType::Modified(ProtoModifiedValueType::OneOf(oneof)) => {
+                oneof.rust_path(&message.package)
             }
-            ProtoType::Modified(ProtoModifiedValueType::OneOf(oneof)) => oneof.rust_path(&message.package),
             _ => anyhow::bail!("flattened fields must be messages or oneofs"),
         };
 
@@ -435,7 +451,10 @@ fn handle_message_field(
     }
 
     if field.options.visibility.has_output() {
-        if matches!(field.options.serde_omittable, ProtoFieldSerdeOmittable::True) {
+        if matches!(
+            field.options.serde_omittable,
+            ProtoFieldSerdeOmittable::True
+        ) {
             message_config.field_attribute(
                 field_name,
                 parse_quote!(#[serde(skip_serializing_if = "::tinc::__private::serde_ser_skip_default")]),
@@ -454,8 +473,12 @@ fn handle_message_field(
                 .to_string();
 
             if field.options.visibility.has_output() {
-                let serialize_with = format!("::tinc::__private::serialize_enum::<{path_str}, _, _>");
-                message_config.field_attribute(field_name, parse_quote!(#[serde(serialize_with = #serialize_with)]));
+                let serialize_with =
+                    format!("::tinc::__private::serialize_enum::<{path_str}, _, _>");
+                message_config.field_attribute(
+                    field_name,
+                    parse_quote!(#[serde(serialize_with = #serialize_with)]),
+                );
             }
 
             message_config.field_attribute(field_name, parse_quote!(#[tinc(enum = #path_str)]));
@@ -477,7 +500,8 @@ fn handle_message_field(
                     );
                 }
                 if field.options.visibility.has_input() {
-                    message_config.field_attribute(field_name, parse_quote!(#[tinc(with_non_finite_values)]));
+                    message_config
+                        .field_attribute(field_name, parse_quote!(#[tinc(with_non_finite_values)]));
                 }
             }
         }
@@ -485,7 +509,13 @@ fn handle_message_field(
     }
 
     if let ProtoType::Modified(ProtoModifiedValueType::OneOf(oneof)) = &field.ty {
-        handle_oneof(package, field_name, oneof, registry, field.options.visibility)?;
+        handle_oneof(
+            package,
+            field_name,
+            oneof,
+            registry,
+            field.options.visibility,
+        )?;
     }
 
     let field_ident = field.rust_ident();
@@ -500,8 +530,10 @@ fn handle_message_field(
 
     // When a field is not nullable but prost generates an option<T>, we need to
     // remove the option before deserializing otherwise null will be a valid input.
-    if matches!(field.ty, ProtoType::Modified(ProtoModifiedValueType::Optional(_)))
-        && (!field.options.nullable || field.options.flatten)
+    if matches!(
+        field.ty,
+        ProtoType::Modified(ProtoModifiedValueType::Optional(_))
+    ) && (!field.options.nullable || field.options.flatten)
     {
         tracker = quote! {
             (#tracker).get_or_insert_default()
@@ -559,7 +591,11 @@ fn handle_message_field(
         quote! {}
     };
 
-    let missing = if matches!(field.options.serde_omittable, ProtoFieldSerdeOmittable::False) && !field.options.flatten {
+    let missing = if matches!(
+        field.options.serde_omittable,
+        ProtoFieldSerdeOmittable::False
+    ) && !field.options.flatten
+    {
         quote! {
             ::tinc::__private::report_tracked_error(
                 ::tinc::__private::TrackedError::missing_field(),
@@ -570,7 +606,10 @@ fn handle_message_field(
     };
 
     let mut tracker_access = quote!(tracker.and_then(|t| t.#field_ident.as_ref()));
-    if matches!(field.ty, ProtoType::Modified(ProtoModifiedValueType::Optional(_))) {
+    if matches!(
+        field.ty,
+        ProtoType::Modified(ProtoModifiedValueType::Optional(_))
+    ) {
         tracker_access = quote!(#tracker_access.and_then(|t| t.as_ref()))
     }
 
@@ -643,8 +682,12 @@ fn cel_expressions(
     {
         let mut compiler = compiler.child();
         let (value_match, field_type) = match ty {
-            ProtoType::Modified(ProtoModifiedValueType::Optional(ty)) => (quote!(Some(value)), ProtoType::Value(ty.clone())),
-            ty @ ProtoType::Modified(ProtoModifiedValueType::OneOf(_)) => (quote!(Some(value)), ty.clone()),
+            ProtoType::Modified(ProtoModifiedValueType::Optional(ty)) => {
+                (quote!(Some(value)), ProtoType::Value(ty.clone()))
+            }
+            ty @ ProtoType::Modified(ProtoModifiedValueType::OneOf(_)) => {
+                (quote!(Some(value)), ty.clone())
+            }
             _ => (quote!(value), ty.clone()),
         };
 
@@ -656,7 +699,8 @@ fn cel_expressions(
 
         let recursive_validate = matches!(
             field_type,
-            ProtoType::Value(ProtoValueType::Message(_)) | ProtoType::Modified(ProtoModifiedValueType::OneOf(_))
+            ProtoType::Value(ProtoValueType::Message(_))
+                | ProtoType::Modified(ProtoModifiedValueType::OneOf(_))
         );
 
         compiler.add_variable(
@@ -688,7 +732,9 @@ fn cel_expressions(
         if !options.nullable
             && matches!(
                 &ty,
-                ProtoType::Modified(ProtoModifiedValueType::Optional(_) | ProtoModifiedValueType::OneOf(_))
+                ProtoType::Modified(
+                    ProtoModifiedValueType::Optional(_) | ProtoModifiedValueType::OneOf(_)
+                )
             )
         {
             cel_validation_fn.push(quote! {{
@@ -716,7 +762,10 @@ fn cel_expressions(
 
                 compiler.add_variable(
                     "input",
-                    CompiledExpr::runtime(CelType::Proto(ProtoType::Value(key.clone())), parse_quote!(key)),
+                    CompiledExpr::runtime(
+                        CelType::Proto(ProtoType::Value(key.clone())),
+                        parse_quote!(key),
+                    ),
                 );
                 options
                     .cel_exprs
@@ -735,7 +784,10 @@ fn cel_expressions(
                 }
                 compiler.add_variable(
                     "input",
-                    CompiledExpr::runtime(CelType::Proto(ProtoType::Value(value.clone())), parse_quote!(value)),
+                    CompiledExpr::runtime(
+                        CelType::Proto(ProtoType::Value(value.clone())),
+                        parse_quote!(value),
+                    ),
                 );
                 options
                     .cel_exprs
@@ -765,7 +817,8 @@ fn cel_expressions(
             }});
         }
         ProtoType::Modified(ProtoModifiedValueType::Repeated(item))
-            if !options.cel_exprs.repeated_item.is_empty() || matches!(item, ProtoValueType::Message(_)) =>
+            if !options.cel_exprs.repeated_item.is_empty()
+                || matches!(item, ProtoValueType::Message(_)) =>
         {
             let is_message = matches!(item, ProtoValueType::Message(_));
             let mut compiler = compiler.child();
@@ -774,7 +827,10 @@ fn cel_expressions(
             }
             compiler.add_variable(
                 "input",
-                CompiledExpr::runtime(CelType::Proto(ProtoType::Value(item.clone())), parse_quote!(item)),
+                CompiledExpr::runtime(
+                    CelType::Proto(ProtoType::Value(item.clone())),
+                    parse_quote!(item),
+                ),
             );
 
             let mut exprs = options
@@ -855,7 +911,9 @@ pub(super) fn handle_message(
         ctx.add_variable(
             "input",
             CompiledExpr::runtime(
-                CelType::Proto(ProtoType::Value(ProtoValueType::Message(message.full_name.clone()))),
+                CelType::Proto(ProtoType::Value(ProtoValueType::Message(
+                    message.full_name.clone(),
+                ))),
                 parse_quote!(___input),
             ),
         );
@@ -866,10 +924,14 @@ pub(super) fn handle_message(
             if let Some(this) = expr.this.clone() {
                 expr_ctx.add_variable("this", CompiledExpr::constant(this));
             }
-            let parsed = cel_parser::parse(&expr.expression).context("message-level cel expression parse")?;
-            let resolved = expr_ctx.resolve(&parsed).context("message-level cel expression")?;
+            let parsed = cel_parser::parse(&expr.expression)
+                .context("message-level cel expression parse")?;
+            let resolved = expr_ctx
+                .resolve(&parsed)
+                .context("message-level cel expression")?;
             let expr_str = &expr.expression;
-            let message_str = eval_message_fmt(&message.full_name, &expr.message, &expr_ctx).context("message-level cel message")?;
+            let message_str = eval_message_fmt(&message.full_name, &expr.message, &expr_ctx)
+                .context("message-level cel message")?;
 
             message_cel_exprs.push(quote! {
                 if !::tinc::__private::cel::to_bool({
@@ -988,7 +1050,11 @@ pub(super) fn handle_message(
     Ok(())
 }
 
-pub(super) fn handle_enum(enum_: &ProtoEnumType, package: &mut Package, registry: &ProtoTypeRegistry) -> anyhow::Result<()> {
+pub(super) fn handle_enum(
+    enum_: &ProtoEnumType,
+    package: &mut Package,
+    registry: &ProtoTypeRegistry,
+) -> anyhow::Result<()> {
     let enum_path = registry
         .resolve_rust_path(&enum_.package, &enum_.full_name)
         .expect("enum not found");
@@ -996,11 +1062,14 @@ pub(super) fn handle_enum(enum_: &ProtoEnumType, package: &mut Package, registry
     let enum_config = package.enum_config(&enum_.full_name);
 
     if enum_.options.repr_enum {
-        enum_config.attribute(parse_quote!(#[derive(::tinc::reexports::serde_repr::Serialize_repr)]));
-        enum_config.attribute(parse_quote!(#[derive(::tinc::reexports::serde_repr::Deserialize_repr)]));
+        enum_config
+            .attribute(parse_quote!(#[derive(::tinc::reexports::serde_repr::Serialize_repr)]));
+        enum_config
+            .attribute(parse_quote!(#[derive(::tinc::reexports::serde_repr::Deserialize_repr)]));
     } else {
         enum_config.attribute(parse_quote!(#[derive(::tinc::reexports::serde_derive::Serialize)]));
-        enum_config.attribute(parse_quote!(#[derive(::tinc::reexports::serde_derive::Deserialize)]));
+        enum_config
+            .attribute(parse_quote!(#[derive(::tinc::reexports::serde_derive::Deserialize)]));
     }
 
     enum_config.attribute(parse_quote!(#[serde(crate = "::tinc::reexports::serde")]));

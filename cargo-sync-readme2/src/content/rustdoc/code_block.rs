@@ -2,7 +2,9 @@ use std::borrow::Cow;
 
 use pulldown_cmark::{CodeBlockKind, CowStr, Event, Tag, TagEnd};
 
-pub(super) fn convert<'a, 'b>(events: impl IntoIterator<Item = Event<'a>> + 'b) -> impl Iterator<Item = Event<'a>> + 'b {
+pub(super) fn convert<'a, 'b>(
+    events: impl IntoIterator<Item = Event<'a>> + 'b,
+) -> impl Iterator<Item = Event<'a>> + 'b {
     let mut in_codeblock = None;
     events.into_iter().map(move |mut event| {
         if let Some(is_rust) = in_codeblock {
@@ -61,19 +63,29 @@ pub(super) fn convert<'a, 'b>(events: impl IntoIterator<Item = Event<'a>> + 'b) 
 }
 
 fn is_attribute_tag(tag: &str) -> bool {
-    matches!(tag, "" | "ignore" | "should_panic" | "no_run" | "compile_fail" | "standalone_crate" | "test_harness")
-        || tag
-            .strip_prefix("edition")
-            .map(|x| x.len() == 4 && x.chars().all(|ch| ch.is_ascii_digit()))
-            .unwrap_or_default()
+    matches!(
+        tag,
+        "" | "ignore"
+            | "should_panic"
+            | "no_run"
+            | "compile_fail"
+            | "standalone_crate"
+            | "test_harness"
+    ) || tag
+        .strip_prefix("edition")
+        .map(|x| x.len() == 4 && x.chars().all(|ch| ch.is_ascii_digit()))
+        .unwrap_or_default()
 }
 
 fn update_codeblock_tag(tag: &mut CowStr<'_>) -> bool {
     let mut tag_count = 0;
-    let is_rust = tag.split(',').filter(|tag| !is_attribute_tag(tag)).all(|tag| {
-        tag_count += 1;
-        tag == "rust"
-    });
+    let is_rust = tag
+        .split(',')
+        .filter(|tag| !is_attribute_tag(tag))
+        .all(|tag| {
+            tag_count += 1;
+            tag == "rust"
+        });
     if is_rust && tag_count == 0 {
         if tag.is_empty() {
             *tag = "rust".into();
@@ -83,4 +95,3 @@ fn update_codeblock_tag(tag: &mut CowStr<'_>) -> bool {
     }
     is_rust
 }
-

@@ -8,7 +8,9 @@ use super::path::ParameterStyle;
 
 /// A single encoding definition applied to a single schema [`Object
 /// property`](crate::schema::Object::properties).
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Default, Clone, PartialEq, bon::Builder)]
+#[derive(
+    serde_derive::Serialize, serde_derive::Deserialize, Default, Clone, PartialEq, bon::Builder,
+)]
 #[cfg_attr(feature = "debug", derive(Debug))]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]

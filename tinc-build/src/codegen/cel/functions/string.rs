@@ -4,7 +4,8 @@ use tinc_cel::CelValue;
 
 use super::Function;
 use crate::codegen::cel::compiler::{
-    CompileError, CompiledExpr, Compiler, CompilerCtx, CompilerTarget, ConstantCompiledExpr, RuntimeCompiledExpr,
+    CompileError, CompiledExpr, Compiler, CompilerCtx, CompilerTarget, ConstantCompiledExpr,
+    RuntimeCompiledExpr,
 };
 use crate::codegen::cel::types::CelType;
 
@@ -15,7 +16,10 @@ fn cel_to_string(ctx: &Compiler, value: &CelValue<'static>) -> CompiledExpr {
     match value {
         CelValue::List(list) => {
             let items: Vec<_> = list.iter().map(|item| cel_to_string(ctx, item)).collect();
-            if items.iter().any(|item| matches!(item, CompiledExpr::Runtime(_))) {
+            if items
+                .iter()
+                .any(|item| matches!(item, CompiledExpr::Runtime(_)))
+            {
                 CompiledExpr::runtime(
                     CelType::CelValue,
                     parse_quote!({
@@ -41,10 +45,9 @@ fn cel_to_string(ctx: &Compiler, value: &CelValue<'static>) -> CompiledExpr {
                 .iter()
                 .map(|(key, value)| (cel_to_string(ctx, key), cel_to_string(ctx, value)))
                 .collect();
-            if items
-                .iter()
-                .any(|(key, value)| matches!(key, CompiledExpr::Runtime(_)) || matches!(value, CompiledExpr::Runtime(_)))
-            {
+            if items.iter().any(|(key, value)| {
+                matches!(key, CompiledExpr::Runtime(_)) || matches!(value, CompiledExpr::Runtime(_))
+            }) {
                 let items = items.iter().map(|(key, value)| quote!((#key, #value)));
                 CompiledExpr::runtime(
                     CelType::CelValue,
@@ -81,8 +84,12 @@ fn cel_to_string(ctx: &Compiler, value: &CelValue<'static>) -> CompiledExpr {
             let serde_name = &proto_enum.options.serde_name;
 
             match ctx.target() {
-                Some(CompilerTarget::Serde) => CompiledExpr::constant(CelValue::String(serde_name.clone().into())),
-                Some(CompilerTarget::Proto) => CompiledExpr::constant(CelValue::String(proto_name.clone().into())),
+                Some(CompilerTarget::Serde) => {
+                    CompiledExpr::constant(CelValue::String(serde_name.clone().into()))
+                }
+                Some(CompilerTarget::Proto) => {
+                    CompiledExpr::constant(CelValue::String(proto_name.clone().into()))
+                }
                 None => CompiledExpr::runtime(
                     CelType::CelValue,
                     parse_quote! {
@@ -123,7 +130,9 @@ impl Function for String {
         }
 
         match this.into_cel()? {
-            CompiledExpr::Constant(ConstantCompiledExpr { value }) => Ok(cel_to_string(&ctx, &value)),
+            CompiledExpr::Constant(ConstantCompiledExpr { value }) => {
+                Ok(cel_to_string(&ctx, &value))
+            }
             CompiledExpr::Runtime(RuntimeCompiledExpr { expr, .. }) => Ok(CompiledExpr::runtime(
                 CelType::CelValue,
                 parse_quote!(::tinc::__private::cel::CelValue::cel_to_string(#expr)),
@@ -148,7 +157,11 @@ mod tests {
 
     #[test]
     fn test_string_syntax() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
         insta::assert_debug_snapshot!(String.compile(CompilerCtx::new(compiler.child(), None, &[])), @r#"
         Err(
@@ -188,11 +201,17 @@ mod tests {
     #[test]
     #[cfg(not(valgrind))]
     fn test_string_runtime() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
-        let string_value =
-            CompiledExpr::runtime(CelType::Proto(ProtoType::Value(ProtoValueType::String)), parse_quote!(input));
+        let string_value = CompiledExpr::runtime(
+            CelType::Proto(ProtoType::Value(ProtoValueType::String)),
+            parse_quote!(input),
+        );
 
         let output = String
             .compile(CompilerCtx::new(compiler.child(), Some(string_value), &[]))

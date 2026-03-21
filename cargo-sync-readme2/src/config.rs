@@ -114,4 +114,3 @@ pub struct Package {
     pub metadata: Metadata,
     pub rustdoc_json: Utf8PathBuf,
 }
-

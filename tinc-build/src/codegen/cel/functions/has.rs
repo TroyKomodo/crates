@@ -43,7 +43,11 @@ mod tests {
 
     #[test]
     fn test_has_syntax() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let mut compiler = Compiler::new(&registry);
         insta::assert_debug_snapshot!(Has.compile(CompilerCtx::new(compiler.child(), None, &[])), @r#"
         Err(
