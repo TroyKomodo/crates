@@ -11,7 +11,10 @@ struct Svc {}
 
 #[tonic::async_trait]
 impl pb::simple_service_server::SimpleService for Svc {
-    async fn ping(&self, request: tonic::Request<pb::PingRequest>) -> tonic::Result<tonic::Response<pb::PingResponse>> {
+    async fn ping(
+        &self,
+        request: tonic::Request<pb::PingRequest>,
+    ) -> tonic::Result<tonic::Response<pb::PingResponse>> {
         Ok(pb::PingResponse {
             result: format!("{} - pong", request.get_ref().arg),
         }
@@ -21,10 +24,14 @@ impl pb::simple_service_server::SimpleService for Svc {
 
 #[tokio::test]
 async fn test_simple_service_grpc() {
-    let mut client =
-        pb::simple_service_client::SimpleServiceClient::new(pb::simple_service_server::SimpleServiceServer::new(Svc {}));
+    let mut client = pb::simple_service_client::SimpleServiceClient::new(
+        pb::simple_service_server::SimpleServiceServer::new(Svc {}),
+    );
 
-    let response = client.ping(pb::PingRequest { arg: "grpc".into() }).await.unwrap();
+    let response = client
+        .ping(pb::PingRequest { arg: "grpc".into() })
+        .await
+        .unwrap();
 
     assert_eq!(response.get_ref().result, "grpc - pong");
 }
@@ -45,7 +52,9 @@ async fn test_simple_service_rest_post() {
     let resp = client.call(req).await.unwrap();
 
     assert_eq!(
-        resp.headers().get(http::header::CONTENT_TYPE).map(|h| h.as_bytes()),
+        resp.headers()
+            .get(http::header::CONTENT_TYPE)
+            .map(|h| h.as_bytes()),
         Some(b"application/json" as &[u8])
     );
 
@@ -68,7 +77,9 @@ async fn test_simple_service_rest_get() {
     let resp = client.call(req).await.unwrap();
 
     assert_eq!(
-        resp.headers().get(http::header::CONTENT_TYPE).map(|h| h.as_bytes()),
+        resp.headers()
+            .get(http::header::CONTENT_TYPE)
+            .map(|h| h.as_bytes()),
         Some(b"application/json" as &[u8])
     );
 

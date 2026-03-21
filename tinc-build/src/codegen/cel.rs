@@ -16,7 +16,8 @@ pub(crate) fn eval_message_fmt(
     msg: &str,
     ctx: &compiler::Compiler<'_>,
 ) -> anyhow::Result<TokenStream> {
-    let fmt = runtime_format::ParsedFmt::new(msg).map_err(|err| anyhow::anyhow!("failed to parse message format: {err}"))?;
+    let fmt = runtime_format::ParsedFmt::new(msg)
+        .map_err(|err| anyhow::anyhow!("failed to parse message format: {err}"))?;
 
     let mut runtime_args = Vec::new();
     let mut compile_time_args = HashMap::new();
@@ -24,7 +25,11 @@ pub(crate) fn eval_message_fmt(
     // each key itself a cel expression
     for key in fmt.keys() {
         let expr = cel_parser::parse(key).context("failed to parse cel expression")?;
-        match functions::String.compile(CompilerCtx::new(ctx.child(), Some(ctx.resolve(&expr)?), &[]))? {
+        match functions::String.compile(CompilerCtx::new(
+            ctx.child(),
+            Some(ctx.resolve(&expr)?),
+            &[],
+        ))? {
             CompiledExpr::Constant(ConstantCompiledExpr { value }) => {
                 // we need to escape the '{' & '}'
                 compile_time_args.insert(key, value);

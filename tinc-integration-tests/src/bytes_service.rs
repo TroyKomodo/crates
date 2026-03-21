@@ -12,15 +12,19 @@ struct Svc {}
 
 #[tonic::async_trait]
 impl pb::bytes_service_server::BytesService for Svc {
-    async fn bytes(&self, request: tonic::Request<pb::BytesPayload>) -> tonic::Result<tonic::Response<pb::BytesPayload>> {
+    async fn bytes(
+        &self,
+        request: tonic::Request<pb::BytesPayload>,
+    ) -> tonic::Result<tonic::Response<pb::BytesPayload>> {
         Ok(request.into_inner().into())
     }
 }
 
 #[tokio::test]
 async fn test_bytes_service_grpc() {
-    let mut client =
-        pb::bytes_service_client::BytesServiceClient::new(pb::bytes_service_server::BytesServiceServer::new(Svc {}));
+    let mut client = pb::bytes_service_client::BytesServiceClient::new(
+        pb::bytes_service_server::BytesServiceServer::new(Svc {}),
+    );
 
     let response = client
         .bytes(pb::BytesPayload {
@@ -50,7 +54,9 @@ async fn test_bytes_service_rest_post_json() {
     let resp = client.call(req).await.unwrap();
 
     assert_eq!(
-        resp.headers().get(http::header::CONTENT_TYPE).map(|h| h.as_bytes()),
+        resp.headers()
+            .get(http::header::CONTENT_TYPE)
+            .map(|h| h.as_bytes()),
         Some(b"application/json" as &[u8])
     );
 
@@ -72,13 +78,17 @@ async fn test_bytes_service_rest_post_binary() {
         .uri("/upload")
         .method("POST")
         .header(http::header::CONTENT_TYPE, "some-random-content-type/xd")
-        .body(http_body_util::Full::new(bytes::Bytes::from(random_data.clone())))
+        .body(http_body_util::Full::new(bytes::Bytes::from(
+            random_data.clone(),
+        )))
         .unwrap();
 
     let resp = client.call(req).await.unwrap();
 
     assert_eq!(
-        resp.headers().get(http::header::CONTENT_TYPE).map(|h| h.as_bytes()),
+        resp.headers()
+            .get(http::header::CONTENT_TYPE)
+            .map(|h| h.as_bytes()),
         Some(b"some-random-content-type/xd" as &[u8])
     );
 

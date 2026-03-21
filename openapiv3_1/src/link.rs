@@ -79,14 +79,23 @@ impl<S: link_builder::State> LinkBuilder<S> {
     /// Add parameters to be passed to [Operation][operation] upon execution.
     ///
     /// [operation]: ../path/struct.Operation.html
-    pub fn parameters<N: Into<String>, V: Into<serde_json::Value>>(self, items: impl IntoIterator<Item = (N, V)>) -> Self {
-        items.into_iter().fold(self, |this, (n, v)| this.parameter(n, v))
+    pub fn parameters<N: Into<String>, V: Into<serde_json::Value>>(
+        self,
+        items: impl IntoIterator<Item = (N, V)>,
+    ) -> Self {
+        items
+            .into_iter()
+            .fold(self, |this, (n, v)| this.parameter(n, v))
     }
 
     /// Add parameter to be passed to [Operation][operation] upon execution.
     ///
     /// [operation]: ../path/struct.Operation.html
-    pub fn parameter<N: Into<String>, V: Into<serde_json::Value>>(mut self, name: N, value: V) -> Self {
+    pub fn parameter<N: Into<String>, V: Into<serde_json::Value>>(
+        mut self,
+        name: N,
+        value: V,
+    ) -> Self {
         self.parameters.insert(name.into(), value.into());
         self
     }

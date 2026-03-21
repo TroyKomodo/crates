@@ -7,6 +7,7 @@ fmt:
     just --unstable --fmt
     shfmt -w .
     nix fmt .
+    cargo fmt
 
 lint:
     cargo clippy --fix --allow-dirty --allow-staged

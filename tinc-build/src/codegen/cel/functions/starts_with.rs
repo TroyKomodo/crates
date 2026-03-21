@@ -2,7 +2,9 @@ use syn::parse_quote;
 use tinc_cel::CelValue;
 
 use super::Function;
-use crate::codegen::cel::compiler::{CompileError, CompiledExpr, CompilerCtx, ConstantCompiledExpr};
+use crate::codegen::cel::compiler::{
+    CompileError, CompiledExpr, CompilerCtx, ConstantCompiledExpr,
+};
 use crate::codegen::cel::types::CelType;
 use crate::types::{ProtoType, ProtoValueType};
 
@@ -35,7 +37,9 @@ impl Function for StartsWith {
             (
                 CompiledExpr::Constant(ConstantCompiledExpr { value: this }),
                 CompiledExpr::Constant(ConstantCompiledExpr { value: arg }),
-            ) => Ok(CompiledExpr::constant(CelValue::cel_starts_with(this, arg)?)),
+            ) => Ok(CompiledExpr::constant(CelValue::cel_starts_with(
+                this, arg,
+            )?)),
             (this, arg) => Ok(CompiledExpr::runtime(
                 CelType::Proto(ProtoType::Value(ProtoValueType::Bool)),
                 parse_quote! {
@@ -65,7 +69,11 @@ mod tests {
 
     #[test]
     fn test_starts_with_syntax() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
         insta::assert_debug_snapshot!(StartsWith.compile(CompilerCtx::new(compiler.child(), None, &[])), @r#"
         Err(
@@ -103,11 +111,17 @@ mod tests {
     #[test]
     #[cfg(not(valgrind))]
     fn test_starts_with_runtime() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
-        let string_value =
-            CompiledExpr::runtime(CelType::Proto(ProtoType::Value(ProtoValueType::String)), parse_quote!(input));
+        let string_value = CompiledExpr::runtime(
+            CelType::Proto(ProtoType::Value(ProtoValueType::String)),
+            parse_quote!(input),
+        );
 
         let output = StartsWith
             .compile(CompilerCtx::new(

@@ -11,9 +11,15 @@ use tinc_cel::{CelValue, NumberTy};
 use crate::codegen::cel::compiler::{CompiledExpr, Compiler, CompilerTarget, ConstantCompiledExpr};
 use crate::codegen::cel::{CelExpression, CelExpressions, functions};
 use crate::codegen::utils::field_ident_from_str;
-use crate::types::{ProtoModifiedValueType, ProtoPath, ProtoType, ProtoTypeRegistry, ProtoValueType, ProtoWellKnownType};
+use crate::types::{
+    ProtoModifiedValueType, ProtoPath, ProtoType, ProtoTypeRegistry, ProtoValueType,
+    ProtoWellKnownType,
+};
 
-fn cel_to_json(cel: &CelValue<'static>, type_registry: &ProtoTypeRegistry) -> anyhow::Result<serde_json::Value> {
+fn cel_to_json(
+    cel: &CelValue<'static>,
+    type_registry: &ProtoTypeRegistry,
+) -> anyhow::Result<serde_json::Value> {
     match cel {
         CelValue::Null => Ok(serde_json::Value::Null),
         CelValue::Bool(b) => Ok(serde_json::Value::Bool(*b)),
@@ -59,7 +65,13 @@ fn cel_to_json(cel: &CelValue<'static>, type_registry: &ProtoTypeRegistry) -> an
                     .variants
                     .values()
                     .find(|v| v.value == cel_enum.value)
-                    .with_context(|| format!("{} has no value for {}", cel_enum.tag.as_ref(), cel_enum.value))?;
+                    .with_context(|| {
+                        format!(
+                            "{} has no value for {}",
+                            cel_enum.tag.as_ref(),
+                            cel_enum.value
+                        )
+                    })?;
                 Ok(serde_json::Value::from(variant.options.serde_name.clone()))
             }
         }
@@ -75,7 +87,11 @@ fn parse_resolve(compiler: &Compiler, expr: &str) -> anyhow::Result<CelValue<'st
     }
 }
 
-fn handle_expr(mut ctx: Compiler, ty: &ProtoType, expr: &CelExpression) -> anyhow::Result<Vec<Schema>> {
+fn handle_expr(
+    mut ctx: Compiler,
+    ty: &ProtoType,
+    expr: &CelExpression,
+) -> anyhow::Result<Vec<Schema>> {
     ctx.set_target(CompilerTarget::Serde);
 
     if let Some(this) = expr.this.clone() {
@@ -205,13 +221,15 @@ fn input_field_getter_gen(
 
         is_optional = matches!(
             field.ty,
-            ProtoType::Modified(ProtoModifiedValueType::Optional(_) | ProtoModifiedValueType::OneOf(_))
+            ProtoType::Modified(
+                ProtoModifiedValueType::Optional(_) | ProtoModifiedValueType::OneOf(_)
+            )
         );
         next_message = match &field.ty {
             ProtoType::Value(ProtoValueType::Message(path))
-            | ProtoType::Modified(ProtoModifiedValueType::Optional(ProtoValueType::Message(path))) => {
-                Some(registry.get_message(path).unwrap())
-            }
+            | ProtoType::Modified(ProtoModifiedValueType::Optional(ProtoValueType::Message(
+                path,
+            ))) => Some(registry.get_message(path).unwrap()),
             _ => None,
         }
     }
@@ -252,7 +270,9 @@ fn output_field_getter_gen(
         cel = Some(&field.options.cel_exprs);
         let is_optional = matches!(
             field.ty,
-            ProtoType::Modified(ProtoModifiedValueType::Optional(_) | ProtoModifiedValueType::OneOf(_))
+            ProtoType::Modified(
+                ProtoModifiedValueType::Optional(_) | ProtoModifiedValueType::OneOf(_)
+            )
         );
 
         mapping = match (is_optional, was_optional) {
@@ -266,9 +286,9 @@ fn output_field_getter_gen(
 
         next_message = match &field.ty {
             ProtoType::Value(ProtoValueType::Message(path))
-            | ProtoType::Modified(ProtoModifiedValueType::Optional(ProtoValueType::Message(path))) => {
-                Some(registry.get_message(path).unwrap())
-            }
+            | ProtoType::Modified(ProtoModifiedValueType::Optional(ProtoValueType::Message(
+                path,
+            ))) => Some(registry.get_message(path).unwrap()),
             _ => None,
         }
     }
@@ -331,7 +351,9 @@ fn path_struct(
     let match_single_ty = |ty: &ProtoValueType| {
         Some(match &ty {
             ProtoValueType::Enum(path) => {
-                let path = registry.resolve_rust_path(package, path).expect("enum not found");
+                let path = registry
+                    .resolve_rust_path(package, path)
+                    .expect("enum not found");
                 quote! {
                     #path
                 }
@@ -403,7 +425,8 @@ fn path_struct(
                 }});
 
                 let ty = match ty {
-                    ProtoType::Modified(ProtoModifiedValueType::Optional(value)) | ProtoType::Value(value) => Some(value),
+                    ProtoType::Modified(ProtoModifiedValueType::Optional(value))
+                    | ProtoType::Value(value) => Some(value),
                     _ => None,
                 };
 
@@ -530,27 +553,35 @@ impl InputGenerator<'_> {
         let first_part = parts.next().expect("parts empty").to_owned();
 
         // Start with the first part of the path
-        let mut current_map = self.used_paths.entry(first_part).or_insert(if parts.peek().is_none() {
-            ExcludePaths::True
-        } else {
-            ExcludePaths::Child(BTreeMap::new())
-        });
+        let mut current_map =
+            self.used_paths
+                .entry(first_part)
+                .or_insert(if parts.peek().is_none() {
+                    ExcludePaths::True
+                } else {
+                    ExcludePaths::Child(BTreeMap::new())
+                });
 
         // Iterate over the remaining parts of the path
         while let Some(part) = parts.next() {
             match current_map {
                 ExcludePaths::True => anyhow::bail!("duplicate path: {field}"),
                 ExcludePaths::Child(map) => {
-                    current_map = map.entry(part.to_owned()).or_insert(if parts.peek().is_none() {
-                        ExcludePaths::True
-                    } else {
-                        ExcludePaths::Child(BTreeMap::new())
-                    });
+                    current_map = map
+                        .entry(part.to_owned())
+                        .or_insert(if parts.peek().is_none() {
+                            ExcludePaths::True
+                        } else {
+                            ExcludePaths::Child(BTreeMap::new())
+                        });
                 }
             }
         }
 
-        anyhow::ensure!(matches!(current_map, ExcludePaths::True), "duplicate path: {field}");
+        anyhow::ensure!(
+            matches!(current_map, ExcludePaths::True),
+            "duplicate path: {field}"
+        );
 
         Ok(())
     }
@@ -561,7 +592,10 @@ impl InputGenerator<'_> {
         quote!((&mut #tracker, &mut #target))
     }
 
-    pub(super) fn generate_query_parameter(&mut self, field: Option<&str>) -> anyhow::Result<GeneratedParams> {
+    pub(super) fn generate_query_parameter(
+        &mut self,
+        field: Option<&str>,
+    ) -> anyhow::Result<GeneratedParams> {
         let mut params = Vec::new();
 
         let extract = if let Some(field) = field {
@@ -581,7 +615,9 @@ impl InputGenerator<'_> {
         let exclude_paths = if let Some(field) = field {
             match self.used_paths.get(field) {
                 Some(ExcludePaths::Child(c)) => Some(c),
-                Some(ExcludePaths::True) => anyhow::bail!("{field} is already used by another operation"),
+                Some(ExcludePaths::True) => {
+                    anyhow::bail!("{field} is already used by another operation")
+                }
                 None => None,
             }
         } else {
@@ -601,11 +637,12 @@ impl InputGenerator<'_> {
         };
 
         for (name, field) in &message_ty.fields {
-            let exclude_paths = match exclude_paths.and_then(|exclude_paths| exclude_paths.get(name)) {
-                Some(ExcludePaths::True) => continue,
-                Some(ExcludePaths::Child(child)) => Some(child),
-                None => None,
-            };
+            let exclude_paths =
+                match exclude_paths.and_then(|exclude_paths| exclude_paths.get(name)) {
+                    Some(ExcludePaths::True) => continue,
+                    Some(ExcludePaths::Child(child)) => Some(child),
+                    None => None,
+                };
             params.push(
                 openapiv3_1::path::Parameter::builder()
                     .name(field.options.serde_name.clone())
@@ -648,7 +685,10 @@ impl InputGenerator<'_> {
         })
     }
 
-    pub(super) fn generate_path_parameter(&mut self, path: &str) -> anyhow::Result<GeneratedParams> {
+    pub(super) fn generate_path_parameter(
+        &mut self,
+        path: &str,
+    ) -> anyhow::Result<GeneratedParams> {
         let params = parse_route(path);
         if params.is_empty() {
             return Ok(GeneratedParams::default());
@@ -658,7 +698,13 @@ impl InputGenerator<'_> {
             defs,
             mappings,
             param_schemas,
-        } = path_struct(self.types, &self.root_ty, self.package, &params, self.base_extract())?;
+        } = path_struct(
+            self.types,
+            &self.root_ty,
+            self.package,
+            &params,
+            self.base_extract(),
+        )?;
         let mut params = Vec::new();
 
         for (path, (ty, cel)) in param_schemas {
@@ -714,7 +760,12 @@ impl InputGenerator<'_> {
     ) -> anyhow::Result<GeneratedBody<openapiv3_1::request_body::RequestBody>> {
         let content_type = if let Some(content_type_field) = content_type_field {
             self.consume_field(content_type_field)?;
-            let extract = input_field_getter_gen(self.types, &self.root_ty, self.base_extract(), content_type_field)?;
+            let extract = input_field_getter_gen(
+                self.types,
+                &self.root_ty,
+                self.base_extract(),
+                content_type_field,
+            )?;
 
             anyhow::ensure!(
                 matches!(extract.ty.value_type(), Some(ProtoValueType::String)),
@@ -750,7 +801,9 @@ impl InputGenerator<'_> {
         let exclude_paths = if let Some(field) = field {
             match self.used_paths.get(field) {
                 Some(ExcludePaths::Child(c)) => Some(c),
-                Some(ExcludePaths::True) => anyhow::bail!("{field} is already used by another operation"),
+                Some(ExcludePaths::True) => {
+                    anyhow::bail!("{field} is already used by another operation")
+                }
                 None => None,
             }
         } else {
@@ -840,7 +893,12 @@ impl OutputGenerator<'_> {
         let builder_ident = &self.builder_ident;
 
         let content_type = if let Some(content_type_field) = content_type_field {
-            let extract = output_field_getter_gen(self.types, &self.root_ty, self.base_extract(), content_type_field)?;
+            let extract = output_field_getter_gen(
+                self.types,
+                &self.root_ty,
+                self.base_extract(),
+                content_type_field,
+            )?;
 
             anyhow::ensure!(
                 matches!(extract.ty.value_type(), Some(ProtoValueType::String)),
@@ -849,7 +907,11 @@ impl OutputGenerator<'_> {
 
             anyhow::ensure!(!extract.ty.nested(), "content-type cannot be nested");
 
-            let modifier = if extract.is_optional { quote!(Some(ct)) } else { quote!(ct) };
+            let modifier = if extract.is_optional {
+                quote!(Some(ct))
+            } else {
+                quote!(ct)
+            };
 
             let extract = extract.tokens;
             let default_ct = body_method.default_content_type();
@@ -1009,19 +1071,26 @@ fn generate(
                             let mut schemas = Vec::with_capacity(1 + cel.map_key.len());
 
                             for expr in &cel.map_key {
-                                schemas.extend(handle_expr(compiler.child(), &ProtoType::Value(key.clone()), expr)?);
+                                schemas.extend(handle_expr(
+                                    compiler.child(),
+                                    &ProtoType::Value(key.clone()),
+                                    expr,
+                                )?);
                             }
 
-                            schemas.push(Schema::object(Object::builder().schema_type(Type::String)));
+                            schemas
+                                .push(Schema::object(Object::builder().schema_type(Type::String)));
 
                             Object::all_ofs(schemas)
                         }
-                        ProtoValueType::Int32 | ProtoValueType::Int64 => {
-                            Object::builder().schema_type(Type::String).pattern("^-?[0-9]+$").build()
-                        }
-                        ProtoValueType::UInt32 | ProtoValueType::UInt64 => {
-                            Object::builder().schema_type(Type::String).pattern("^[0-9]+$").build()
-                        }
+                        ProtoValueType::Int32 | ProtoValueType::Int64 => Object::builder()
+                            .schema_type(Type::String)
+                            .pattern("^-?[0-9]+$")
+                            .build(),
+                        ProtoValueType::UInt32 | ProtoValueType::UInt64 => Object::builder()
+                            .schema_type(Type::String)
+                            .pattern("^[0-9]+$")
+                            .build(),
                         ProtoValueType::Bool => Object::builder()
                             .schema_type(Type::String)
                             .enum_values(["true", "false"])
@@ -1031,7 +1100,11 @@ fn generate(
                     .additional_properties({
                         let mut schemas = Vec::with_capacity(1 + cel.map_value.len());
                         for expr in &cel.map_value {
-                            schemas.extend(handle_expr(compiler.child(), &ProtoType::Value(value.clone()), expr)?);
+                            schemas.extend(handle_expr(
+                                compiler.child(),
+                                &ProtoType::Value(value.clone()),
+                                expr,
+                            )?);
                         }
 
                         schemas.push(internal_generate(
@@ -1106,7 +1179,9 @@ fn generate(
                                                 Schema::object(
                                                     Object::builder()
                                                         .schema_type(Type::String)
-                                                        .const_value(field.options.serde_name.clone())
+                                                        .const_value(
+                                                            field.options.serde_name.clone(),
+                                                        )
                                                         .build(),
                                                 ),
                                             );
@@ -1178,7 +1253,9 @@ fn generate(
                     ])
                     .build(),
             ),
-            ProtoType::Value(ProtoValueType::Bool) => Schema::object(Object::builder().schema_type(Type::Boolean).build()),
+            ProtoType::Value(ProtoValueType::Bool) => {
+                Schema::object(Object::builder().schema_type(Type::Boolean).build())
+            }
             ProtoType::Value(ProtoValueType::Bytes) => Schema::object(
                 Object::builder()
                     .schema_type(Type::String)
@@ -1215,39 +1292,50 @@ fn generate(
             ProtoType::Value(ProtoValueType::UInt32) => Schema::object(Object::uint32()),
             ProtoType::Value(ProtoValueType::Int64) => Schema::object(Object::int64()),
             ProtoType::Value(ProtoValueType::UInt64) => Schema::object(Object::uint64()),
-            ProtoType::Value(ProtoValueType::String) => Schema::object(Object::builder().schema_type(Type::String).build()),
+            ProtoType::Value(ProtoValueType::String) => {
+                Schema::object(Object::builder().schema_type(Type::String).build())
+            }
             ProtoType::Value(ProtoValueType::Enum(enum_path)) => {
                 let ety = types
                     .get_enum(&enum_path)
                     .with_context(|| format!("missing enum: {enum_path}"))?;
-                let schema_name = if ety
-                    .variants
-                    .values()
-                    .any(|v| v.options.visibility.has_input() != v.options.visibility.has_output())
-                {
-                    format!("{direction:?}.{enum_path}")
-                } else {
-                    enum_path.to_string()
-                };
+                let schema_name =
+                    if ety.variants.values().any(|v| {
+                        v.options.visibility.has_input() != v.options.visibility.has_output()
+                    }) {
+                        format!("{direction:?}.{enum_path}")
+                    } else {
+                        enum_path.to_string()
+                    };
 
                 if !components.schemas.contains_key(enum_path.as_ref()) {
                     components.add_schema(
                         schema_name.clone(),
                         Schema::object(
                             Object::builder()
-                                .schema_type(if ety.options.repr_enum { Type::Integer } else { Type::String })
+                                .schema_type(if ety.options.repr_enum {
+                                    Type::Integer
+                                } else {
+                                    Type::String
+                                })
                                 .enum_values(
                                     ety.variants
                                         .values()
                                         .filter(|v| match direction {
-                                            GenerateDirection::Input => v.options.visibility.has_input(),
-                                            GenerateDirection::Output => v.options.visibility.has_output(),
+                                            GenerateDirection::Input => {
+                                                v.options.visibility.has_input()
+                                            }
+                                            GenerateDirection::Output => {
+                                                v.options.visibility.has_output()
+                                            }
                                         })
                                         .map(|v| {
                                             if ety.options.repr_enum {
                                                 serde_json::Value::from(v.value)
                                             } else {
-                                                serde_json::Value::from(v.options.serde_name.clone())
+                                                serde_json::Value::from(
+                                                    v.options.serde_name.clone(),
+                                                )
                                             }
                                         })
                                         .collect::<Vec<_>>(),
@@ -1266,19 +1354,20 @@ fn generate(
                     .get_message(message_path)
                     .with_context(|| format!("missing message: {message_path}"))?;
 
-                let schema_name = if message_ty
-                    .fields
-                    .values()
-                    .any(|v| v.options.visibility.has_input() != v.options.visibility.has_output())
-                {
-                    format!("{direction:?}.{message_path}")
-                } else {
-                    message_path.to_string()
-                };
+                let schema_name =
+                    if message_ty.fields.values().any(|v| {
+                        v.options.visibility.has_input() != v.options.visibility.has_output()
+                    }) {
+                        format!("{direction:?}.{message_path}")
+                    } else {
+                        message_path.to_string()
+                    };
 
                 if !components.schemas.contains_key(&schema_name) || !used_paths.is_empty() {
                     if used_paths.is_empty() {
-                        components.schemas.insert(schema_name.clone(), Schema::Bool(false));
+                        components
+                            .schemas
+                            .insert(schema_name.clone(), Schema::Bool(false));
                     }
                     let mut properties = IndexMap::new();
                     let mut required = Vec::new();
@@ -1288,10 +1377,15 @@ fn generate(
                         schemas.extend(handle_expr(compiler.child(), ty, expr)?);
                     }
 
-                    for (name, field) in message_ty.fields.iter().filter(|(_, field)| match direction {
-                        GenerateDirection::Input => field.options.visibility.has_input(),
-                        GenerateDirection::Output => field.options.visibility.has_output(),
-                    }) {
+                    for (name, field) in
+                        message_ty
+                            .fields
+                            .iter()
+                            .filter(|(_, field)| match direction {
+                                GenerateDirection::Input => field.options.visibility.has_input(),
+                                GenerateDirection::Output => field.options.visibility.has_output(),
+                            })
+                    {
                         let exclude_paths = match used_paths.get(name) {
                             Some(ExcludePaths::True) => continue,
                             Some(ExcludePaths::Child(child)) => Some(child),
@@ -1301,7 +1395,8 @@ fn generate(
                             required.push(field.options.serde_name.clone());
                         }
 
-                        let ty = match (!field.options.nullable || field.options.flatten, &field.ty) {
+                        let ty = match (!field.options.nullable || field.options.flatten, &field.ty)
+                        {
                             (true, ProtoType::Modified(ProtoModifiedValueType::Optional(ty))) => {
                                 ProtoType::Value(ty.clone())
                             }
@@ -1325,11 +1420,19 @@ fn generate(
                             schemas.push(field_schema);
                         } else {
                             let schema = if field.options.nullable
-                                && !matches!(&field.ty, ProtoType::Modified(ProtoModifiedValueType::Optional(_)))
-                            {
+                                && !matches!(
+                                    &field.ty,
+                                    ProtoType::Modified(ProtoModifiedValueType::Optional(_))
+                                ) {
                                 Schema::object(
                                     Object::builder()
-                                        .one_ofs([Object::builder().schema_type(Type::Null).build().into(), field_schema])
+                                        .one_ofs([
+                                            Object::builder()
+                                                .schema_type(Type::Null)
+                                                .build()
+                                                .into(),
+                                            field_schema,
+                                        ])
                                         .build(),
                                 )
                             } else {
@@ -1340,7 +1443,11 @@ fn generate(
                                 field.options.serde_name.clone(),
                                 Schema::object(Object::all_ofs([
                                     schema,
-                                    Schema::object(Object::builder().description(field.comments.to_string()).build()),
+                                    Schema::object(
+                                        Object::builder()
+                                            .description(field.comments.to_string())
+                                            .build(),
+                                    ),
                                 ])),
                             );
                         }
@@ -1358,7 +1465,10 @@ fn generate(
                     ));
 
                     if used_paths.is_empty() {
-                        components.add_schema(schema_name.clone(), Object::all_ofs(schemas).into_optimized());
+                        components.add_schema(
+                            schema_name.clone(),
+                            Object::all_ofs(schemas).into_optimized(),
+                        );
                         Schema::object(Ref::from_schema_name(schema_name))
                     } else {
                         Schema::object(Object::all_ofs(schemas))
@@ -1368,32 +1478,46 @@ fn generate(
                 }
             }
             ProtoType::Value(ProtoValueType::WellKnown(ProtoWellKnownType::Timestamp)) => {
-                Schema::object(Object::builder().schema_type(Type::String).format("date-time").build())
+                Schema::object(
+                    Object::builder()
+                        .schema_type(Type::String)
+                        .format("date-time")
+                        .build(),
+                )
             }
             ProtoType::Value(ProtoValueType::WellKnown(ProtoWellKnownType::Duration)) => {
-                Schema::object(Object::builder().schema_type(Type::String).format("duration").build())
+                Schema::object(
+                    Object::builder()
+                        .schema_type(Type::String)
+                        .format("duration")
+                        .build(),
+                )
             }
-            ProtoType::Value(ProtoValueType::WellKnown(ProtoWellKnownType::Empty)) => Schema::object(
-                Object::builder()
-                    .schema_type(Type::Object)
-                    .unevaluated_properties(false)
-                    .build(),
-            ),
+            ProtoType::Value(ProtoValueType::WellKnown(ProtoWellKnownType::Empty)) => {
+                Schema::object(
+                    Object::builder()
+                        .schema_type(Type::Object)
+                        .unevaluated_properties(false)
+                        .build(),
+                )
+            }
             ProtoType::Value(ProtoValueType::WellKnown(ProtoWellKnownType::ListValue)) => {
                 Schema::object(Object::builder().schema_type(Type::Array).build())
             }
-            ProtoType::Value(ProtoValueType::WellKnown(ProtoWellKnownType::Value)) => Schema::object(
-                Object::builder()
-                    .schema_type(vec![
-                        Type::Null,
-                        Type::Boolean,
-                        Type::Object,
-                        Type::Array,
-                        Type::Number,
-                        Type::String,
-                    ])
-                    .build(),
-            ),
+            ProtoType::Value(ProtoValueType::WellKnown(ProtoWellKnownType::Value)) => {
+                Schema::object(
+                    Object::builder()
+                        .schema_type(vec![
+                            Type::Null,
+                            Type::Boolean,
+                            Type::Object,
+                            Type::Array,
+                            Type::Number,
+                            Type::String,
+                        ])
+                        .build(),
+                )
+            }
             ProtoType::Value(ProtoValueType::WellKnown(ProtoWellKnownType::Struct)) => {
                 Schema::object(Object::builder().schema_type(Type::Object).build())
             }
@@ -1408,5 +1532,6 @@ fn generate(
         Ok(Schema::object(Object::all_ofs(schemas)))
     }
 
-    internal_generate(field_info, components, types, used_paths, direction, bytes).map(|schema| schema.into_optimized())
+    internal_generate(field_info, components, types, used_paths, direction, bytes)
+        .map(|schema| schema.into_optimized())
 }

@@ -46,7 +46,10 @@ impl pb::advanced_service_server::AdvancedService for Svc {
         Ok(pb::UpdateUserResponse {
             user_id: req.user_id.clone(),
             username: "testuser".into(),
-            email: req.email.clone().unwrap_or_else(|| "test@example.com".into()),
+            email: req
+                .email
+                .clone()
+                .unwrap_or_else(|| "test@example.com".into()),
             display_name: req.display_name.clone(),
         }
         .into())
@@ -176,7 +179,9 @@ fn test_create_user_username_pattern() {
         email: "test@example.com".into(),
         display_name: None,
     };
-    state.in_scope(|| invalid_start_number.validate(None)).unwrap();
+    state
+        .in_scope(|| invalid_start_number.validate(None))
+        .unwrap();
 
     insta::assert_debug_snapshot!(state, @r#"
     TrackerSharedState {

@@ -21,7 +21,9 @@ pub(crate) enum CompiledExpr {
 
 impl CompiledExpr {
     pub(crate) fn constant(value: impl CelValueConv<'static>) -> Self {
-        Self::Constant(ConstantCompiledExpr { value: value.conv() })
+        Self::Constant(ConstantCompiledExpr {
+            value: value.conv(),
+        })
     }
 
     pub(crate) fn runtime(ty: CelType, expr: syn::Expr) -> Self {
@@ -243,8 +245,16 @@ pub(crate) struct CompilerCtx<'a> {
 }
 
 impl<'a> CompilerCtx<'a> {
-    pub(crate) fn new(compiler: Compiler<'a>, this: Option<CompiledExpr>, args: &'a [cel_parser::Expression]) -> Self {
-        Self { this, args, compiler }
+    pub(crate) fn new(
+        compiler: Compiler<'a>,
+        this: Option<CompiledExpr>,
+        args: &'a [cel_parser::Expression],
+    ) -> Self {
+        Self {
+            this,
+            args,
+            compiler,
+        }
     }
 }
 
@@ -272,7 +282,10 @@ impl<'a> Compiler<'a> {
         self.functions.insert(name, DebugFunc(Arc::new(f)));
     }
 
-    pub(crate) fn resolve(&self, expr: &cel_parser::Expression) -> Result<CompiledExpr, CompileError> {
+    pub(crate) fn resolve(
+        &self,
+        expr: &cel_parser::Expression,
+    ) -> Result<CompiledExpr, CompileError> {
         resolve::resolve(self, expr)
     }
 
@@ -286,7 +299,10 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    pub(crate) fn get_function(&self, name: &str) -> Option<&Arc<dyn Function + Send + Sync + 'static>> {
+    pub(crate) fn get_function(
+        &self,
+        name: &str,
+    ) -> Option<&Arc<dyn Function + Send + Sync + 'static>> {
         match self.functions.get(name) {
             Some(func) => Some(&func.0),
             None => match self.parent {
@@ -311,15 +327,9 @@ pub(crate) enum CompileError {
         syntax: &'static str,
     },
     #[error("type conversion error on type {ty:?}: {message}")]
-    TypeConversion {
-        ty: Box<CelType>,
-        message: String,
-    },
+    TypeConversion { ty: Box<CelType>, message: String },
     #[error("member access error on type {ty:?}: {message}")]
-    MemberAccess {
-        ty: Box<CelType>,
-        message: String,
-    },
+    MemberAccess { ty: Box<CelType>, message: String },
     #[error("variable not found: {0}")]
     VariableNotFound(String),
     #[error("function not found: {0}")]

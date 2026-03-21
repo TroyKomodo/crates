@@ -21,8 +21,12 @@ pub struct Extensions {
 
 impl Extensions {
     /// Create a new extension from an iterator
-    pub fn new<K: Into<String>, V: Into<serde_json::Value>>(items: impl IntoIterator<Item = (K, V)>) -> Self {
-        items.into_iter().fold(Self::default(), |this, (k, v)| this.add(k, v))
+    pub fn new<K: Into<String>, V: Into<serde_json::Value>>(
+        items: impl IntoIterator<Item = (K, V)>,
+    ) -> Self {
+        items
+            .into_iter()
+            .fold(Self::default(), |this, (k, v)| this.add(k, v))
     }
 
     /// Merge other [`Extensions`] into _`self`_.

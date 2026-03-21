@@ -2,7 +2,9 @@ use syn::parse_quote;
 use tinc_cel::CelValue;
 
 use super::Function;
-use crate::codegen::cel::compiler::{CompileError, CompiledExpr, CompilerCtx, ConstantCompiledExpr, RuntimeCompiledExpr};
+use crate::codegen::cel::compiler::{
+    CompileError, CompiledExpr, CompilerCtx, ConstantCompiledExpr, RuntimeCompiledExpr,
+};
 use crate::codegen::cel::types::CelType;
 use crate::types::{ProtoModifiedValueType, ProtoType, ProtoValueType};
 
@@ -29,7 +31,10 @@ impl Function for Size {
 
         if let CompiledExpr::Runtime(RuntimeCompiledExpr {
             expr,
-            ty: CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Repeated(_) | ProtoModifiedValueType::Map(_, _))),
+            ty:
+                CelType::Proto(ProtoType::Modified(
+                    ProtoModifiedValueType::Repeated(_) | ProtoModifiedValueType::Map(_, _),
+                )),
         }) = &this
         {
             return Ok(CompiledExpr::runtime(
@@ -41,7 +46,9 @@ impl Function for Size {
         }
 
         match this.into_cel()? {
-            CompiledExpr::Constant(ConstantCompiledExpr { value }) => Ok(CompiledExpr::constant(CelValue::cel_size(value)?)),
+            CompiledExpr::Constant(ConstantCompiledExpr { value }) => {
+                Ok(CompiledExpr::constant(CelValue::cel_size(value)?))
+            }
             CompiledExpr::Runtime(RuntimeCompiledExpr { expr, .. }) => Ok(CompiledExpr::runtime(
                 CelType::Proto(ProtoType::Value(ProtoValueType::UInt64)),
                 parse_quote!(::tinc::__private::cel::CelValue::cel_size(#expr)?),
@@ -66,7 +73,11 @@ mod tests {
 
     #[test]
     fn test_size_syntax() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
         insta::assert_debug_snapshot!(Size.compile(CompilerCtx::new(compiler.child(), None, &[])), @r#"
         Err(
@@ -106,11 +117,17 @@ mod tests {
     #[test]
     #[cfg(not(valgrind))]
     fn test_size_runtime() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
-        let string_value =
-            CompiledExpr::runtime(CelType::Proto(ProtoType::Value(ProtoValueType::String)), parse_quote!(input));
+        let string_value = CompiledExpr::runtime(
+            CelType::Proto(ProtoType::Value(ProtoValueType::String)),
+            parse_quote!(input),
+        );
 
         let output = Size
             .compile(CompilerCtx::new(compiler.child(), Some(string_value), &[]))
@@ -139,7 +156,11 @@ mod tests {
     #[test]
     #[cfg(not(valgrind))]
     fn test_size_runtime_map() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
         let input = CompiledExpr::runtime(
@@ -150,7 +171,9 @@ mod tests {
             parse_quote!(input),
         );
 
-        let output = Size.compile(CompilerCtx::new(compiler.child(), Some(input), &[])).unwrap();
+        let output = Size
+            .compile(CompilerCtx::new(compiler.child(), Some(input), &[]))
+            .unwrap();
 
         insta::assert_snapshot!(postcompile::compile_str!(
             postcompile::config! {
@@ -188,11 +211,17 @@ mod tests {
     #[test]
     #[cfg(not(valgrind))]
     fn test_size_runtime_repeated() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
         let string_value = CompiledExpr::runtime(
-            CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Repeated(ProtoValueType::String))),
+            CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Repeated(
+                ProtoValueType::String,
+            ))),
             parse_quote!(input),
         );
 

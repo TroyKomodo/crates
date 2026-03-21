@@ -4,7 +4,9 @@ use syn::parse_quote;
 use tinc_cel::CelValue;
 
 use super::Function;
-use crate::codegen::cel::compiler::{CompileError, CompiledExpr, CompilerCtx, ConstantCompiledExpr, RuntimeCompiledExpr};
+use crate::codegen::cel::compiler::{
+    CompileError, CompiledExpr, CompilerCtx, ConstantCompiledExpr, RuntimeCompiledExpr,
+};
 use crate::codegen::cel::types::CelType;
 use crate::types::{ProtoModifiedValueType, ProtoType, ProtoValueType};
 
@@ -42,11 +44,17 @@ impl Function for All {
         };
 
         if ctx.args.len() != 2 {
-            return Err(CompileError::syntax("invalid number of args, expected 2", self));
+            return Err(CompileError::syntax(
+                "invalid number of args, expected 2",
+                self,
+            ));
         }
 
         let cel_parser::Expression::Ident(variable) = &ctx.args[0] else {
-            return Err(CompileError::syntax("first argument must be an ident", self));
+            return Err(CompileError::syntax(
+                "first argument must be an ident",
+                self,
+            ));
         };
 
         match this {
@@ -55,14 +63,20 @@ impl Function for All {
 
                 match ty {
                     CelType::CelValue => {
-                        child_ctx.add_variable(variable, CompiledExpr::runtime(CelType::CelValue, parse_quote!(item)));
+                        child_ctx.add_variable(
+                            variable,
+                            CompiledExpr::runtime(CelType::CelValue, parse_quote!(item)),
+                        );
                     }
                     CelType::Proto(ProtoType::Modified(
                         ProtoModifiedValueType::Repeated(ty) | ProtoModifiedValueType::Map(ty, _),
                     )) => {
                         child_ctx.add_variable(
                             variable,
-                            CompiledExpr::runtime(CelType::Proto(ProtoType::Value(ty.clone())), parse_quote!(item)),
+                            CompiledExpr::runtime(
+                                CelType::Proto(ProtoType::Value(ty.clone())),
+                                parse_quote!(item),
+                            ),
                         );
                     }
                     v => {
@@ -88,9 +102,9 @@ impl Function for All {
                         CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Map(_, _))) => {
                             native_impl(quote!((#expr).keys()), parse_quote!(item), arg)
                         }
-                        CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Repeated(_))) => {
-                            native_impl(quote!((#expr).iter()), parse_quote!(item), arg)
-                        }
+                        CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Repeated(
+                            _,
+                        ))) => native_impl(quote!((#expr).iter()), parse_quote!(item), arg),
                         _ => unreachable!(),
                     },
                 ))
@@ -103,34 +117,48 @@ impl Function for All {
 
                     child_ctx.add_variable(variable, CompiledExpr::constant(value));
 
-                    child_ctx.resolve(&ctx.args[1]).map(|v| v.into_bool(&child_ctx))
+                    child_ctx
+                        .resolve(&ctx.args[1])
+                        .map(|v| v.into_bool(&child_ctx))
                 };
 
                 let collected: Result<Vec<_>, _> = match value {
                     CelValue::List(item) => item.iter().cloned().map(compile_val).collect(),
-                    CelValue::Map(item) => item.iter().map(|(key, _)| key).cloned().map(compile_val).collect(),
+                    CelValue::Map(item) => item
+                        .iter()
+                        .map(|(key, _)| key)
+                        .cloned()
+                        .map(compile_val)
+                        .collect(),
                     _ => unreachable!(),
                 };
 
                 let collected = collected?;
-                if collected.iter().any(|c| matches!(c, CompiledExpr::Runtime(_))) {
+                if collected
+                    .iter()
+                    .any(|c| matches!(c, CompiledExpr::Runtime(_)))
+                {
                     Ok(CompiledExpr::runtime(
                         CelType::Proto(ProtoType::Value(ProtoValueType::Bool)),
                         native_impl(quote!([#(#collected),*]), parse_quote!(item), quote!(item)),
                     ))
                 } else {
-                    Ok(CompiledExpr::constant(CelValue::Bool(collected.into_iter().all(
-                        |c| match c {
-                            CompiledExpr::Constant(ConstantCompiledExpr { value }) => value.to_bool(),
+                    Ok(CompiledExpr::constant(CelValue::Bool(
+                        collected.into_iter().all(|c| match c {
+                            CompiledExpr::Constant(ConstantCompiledExpr { value }) => {
+                                value.to_bool()
+                            }
                             _ => unreachable!("all values must be constant"),
-                        },
-                    ))))
+                        }),
+                    )))
                 }
             }
-            CompiledExpr::Constant(ConstantCompiledExpr { value }) => Err(CompileError::TypeConversion {
-                ty: Box::new(CelType::CelValue),
-                message: format!("{value:?} cannot be iterated over"),
-            }),
+            CompiledExpr::Constant(ConstantCompiledExpr { value }) => {
+                Err(CompileError::TypeConversion {
+                    ty: Box::new(CelType::CelValue),
+                    message: format!("{value:?} cannot be iterated over"),
+                })
+            }
         }
     }
 }
@@ -152,7 +180,11 @@ mod tests {
 
     #[test]
     fn test_all_syntax() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
         insta::assert_debug_snapshot!(All.compile(CompilerCtx::new(compiler.child(), None, &[])), @r#"
         Err(
@@ -281,7 +313,11 @@ mod tests {
     #[test]
     #[cfg(not(valgrind))]
     fn test_all_cel_value() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
         let map = CompiledExpr::runtime(CelType::CelValue, parse_quote!(input));
@@ -329,7 +365,11 @@ mod tests {
     #[test]
     #[cfg(not(valgrind))]
     fn test_all_proto_map() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
         let map = CompiledExpr::runtime(
@@ -395,11 +435,17 @@ mod tests {
     #[test]
     #[cfg(not(valgrind))]
     fn test_all_proto_repeated() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
         let repeated = CompiledExpr::runtime(
-            CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Repeated(ProtoValueType::Int32))),
+            CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Repeated(
+                ProtoValueType::Int32,
+            ))),
             parse_quote!(input),
         );
 
@@ -446,10 +492,16 @@ mod tests {
     #[test]
     #[cfg(not(valgrind))]
     fn test_all_const_needs_runtime() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
-        let list = CompiledExpr::constant(CelValue::List([CelValue::Number(0.into())].into_iter().collect()));
+        let list = CompiledExpr::constant(CelValue::List(
+            [CelValue::Number(0.into())].into_iter().collect(),
+        ));
 
         let result = All
             .compile(CompilerCtx::new(
@@ -490,11 +542,17 @@ mod tests {
     #[test]
     #[cfg(not(valgrind))]
     fn test_all_runtime() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
         let list = CompiledExpr::runtime(
-            CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Repeated(ProtoValueType::Int32))),
+            CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Repeated(
+                ProtoValueType::Int32,
+            ))),
             parse_quote!(input),
         );
 

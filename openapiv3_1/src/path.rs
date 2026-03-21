@@ -67,17 +67,23 @@ impl Paths {
     /// # let paths = Paths::new();
     /// let operation = paths.get_path_operation("/api/v1/user", HttpMethod::Get);
     /// ```
-    pub fn get_path_operation<P: AsRef<str>>(&self, path: P, http_method: HttpMethod) -> Option<&Operation> {
-        self.paths.get(path.as_ref()).and_then(|path| match http_method {
-            HttpMethod::Get => path.get.as_ref(),
-            HttpMethod::Put => path.put.as_ref(),
-            HttpMethod::Post => path.post.as_ref(),
-            HttpMethod::Delete => path.delete.as_ref(),
-            HttpMethod::Options => path.options.as_ref(),
-            HttpMethod::Head => path.head.as_ref(),
-            HttpMethod::Patch => path.patch.as_ref(),
-            HttpMethod::Trace => path.trace.as_ref(),
-        })
+    pub fn get_path_operation<P: AsRef<str>>(
+        &self,
+        path: P,
+        http_method: HttpMethod,
+    ) -> Option<&Operation> {
+        self.paths
+            .get(path.as_ref())
+            .and_then(|path| match http_method {
+                HttpMethod::Get => path.get.as_ref(),
+                HttpMethod::Put => path.put.as_ref(),
+                HttpMethod::Post => path.post.as_ref(),
+                HttpMethod::Delete => path.delete.as_ref(),
+                HttpMethod::Options => path.options.as_ref(),
+                HttpMethod::Head => path.head.as_ref(),
+                HttpMethod::Patch => path.patch.as_ref(),
+                HttpMethod::Trace => path.trace.as_ref(),
+            })
     }
 
     /// Append path operation to the list of paths.
@@ -109,8 +115,10 @@ impl Paths {
                 };
             }
         } else {
-            self.paths
-                .insert(String::from(path), PathItem::from_http_methods(http_methods, operation));
+            self.paths.insert(
+                String::from(path),
+                PathItem::from_http_methods(http_methods, operation),
+            );
         }
     }
 
@@ -150,7 +158,10 @@ impl<S: paths_builder::State> PathsBuilder<S> {
 
     /// Append [`PathItem`]s with path to map of paths. If path already exists it will merge [`Operation`]s of
     /// [`PathItem`] with already found path item operations.
-    pub fn paths<I: Into<String>, P: Into<PathItem>>(self, items: impl IntoIterator<Item = (I, P)>) -> Self {
+    pub fn paths<I: Into<String>, P: Into<PathItem>>(
+        self,
+        items: impl IntoIterator<Item = (I, P)>,
+    ) -> Self {
         items.into_iter().fold(self, |this, (i, p)| this.path(i, p))
     }
 }
@@ -253,7 +264,10 @@ impl PathItem {
     }
 
     /// Constructs a new [`PathItem`] with given [`Operation`] set for provided [`HttpMethod`]s.
-    pub fn from_http_methods<I: IntoIterator<Item = HttpMethod>, O: Into<Operation>>(http_methods: I, operation: O) -> Self {
+    pub fn from_http_methods<I: IntoIterator<Item = HttpMethod>, O: Into<Operation>>(
+        http_methods: I,
+        operation: O,
+    ) -> Self {
         let mut path_item = Self::default();
         let operation = operation.into();
         for method in http_methods {
@@ -447,26 +461,41 @@ impl<S: operation_builder::State> OperationBuilder<S> {
 
     /// Add or change parameters of the [`Operation`].
     pub fn parameters<P: Into<Parameter>>(self, parameters: impl IntoIterator<Item = P>) -> Self {
-        parameters.into_iter().fold(self, |this, p| this.parameter(p))
+        parameters
+            .into_iter()
+            .fold(self, |this, p| this.parameter(p))
     }
 
     /// Append parameter to [`Operation`] parameters.
     pub fn parameter(mut self, parameter: impl Into<Parameter>) -> Self {
-        self.parameters.get_or_insert_default().push(parameter.into());
+        self.parameters
+            .get_or_insert_default()
+            .push(parameter.into());
         self
     }
 
     /// Add or change responses of the [`Operation`].
-    pub fn responses<R: Into<RefOr<Response>>, C: Into<String>>(self, responses: impl IntoIterator<Item = (C, R)>) -> Self {
-        responses.into_iter().fold(self, |this, (c, r)| this.response(c, r))
+    pub fn responses<R: Into<RefOr<Response>>, C: Into<String>>(
+        self,
+        responses: impl IntoIterator<Item = (C, R)>,
+    ) -> Self {
+        responses
+            .into_iter()
+            .fold(self, |this, (c, r)| this.response(c, r))
     }
 
     /// Append status code and a [`Response`] to the [`Operation`] responses map.
     ///
     /// * `code` must be valid HTTP status code.
     /// * `response` is instances of [`Response`].
-    pub fn response(mut self, code: impl Into<String>, response: impl Into<RefOr<Response>>) -> Self {
-        self.responses.responses.insert(code.into(), response.into());
+    pub fn response(
+        mut self,
+        code: impl Into<String>,
+        response: impl Into<RefOr<Response>>,
+    ) -> Self {
+        self.responses
+            .responses
+            .insert(code.into(), response.into());
 
         self
     }
@@ -478,8 +507,13 @@ impl<S: operation_builder::State> OperationBuilder<S> {
     }
 
     /// Append [`SecurityRequirement`] to [`Operation`] security requirements.
-    pub fn securities<R: Into<SecurityRequirement>>(self, securities: impl IntoIterator<Item = R>) -> Self {
-        securities.into_iter().fold(self, |this, s| this.security(s))
+    pub fn securities<R: Into<SecurityRequirement>>(
+        self,
+        securities: impl IntoIterator<Item = R>,
+    ) -> Self {
+        securities
+            .into_iter()
+            .fold(self, |this, s| this.security(s))
     }
 
     /// Append [`Server`]s to the [`Operation`].
@@ -507,13 +541,20 @@ impl Operation {
     }
 
     /// Add or change parameters of the [`Operation`].
-    pub fn parameters<P: Into<Parameter>>(&mut self, parameters: impl IntoIterator<Item = P>) -> &mut Self {
-        parameters.into_iter().fold(self, |this, p| this.parameter(p))
+    pub fn parameters<P: Into<Parameter>>(
+        &mut self,
+        parameters: impl IntoIterator<Item = P>,
+    ) -> &mut Self {
+        parameters
+            .into_iter()
+            .fold(self, |this, p| this.parameter(p))
     }
 
     /// Append parameter to [`Operation`] parameters.
     pub fn parameter(&mut self, parameter: impl Into<Parameter>) -> &mut Self {
-        self.parameters.get_or_insert_default().push(parameter.into());
+        self.parameters
+            .get_or_insert_default()
+            .push(parameter.into());
         self
     }
 
@@ -522,15 +563,23 @@ impl Operation {
         &mut self,
         responses: impl IntoIterator<Item = (C, R)>,
     ) -> &mut Self {
-        responses.into_iter().fold(self, |this, (c, r)| this.response(c, r))
+        responses
+            .into_iter()
+            .fold(self, |this, (c, r)| this.response(c, r))
     }
 
     /// Append status code and a [`Response`] to the [`Operation`] responses map.
     ///
     /// * `code` must be valid HTTP status code.
     /// * `response` is instances of [`Response`].
-    pub fn response(&mut self, code: impl Into<String>, response: impl Into<RefOr<Response>>) -> &mut Self {
-        self.responses.responses.insert(code.into(), response.into());
+    pub fn response(
+        &mut self,
+        code: impl Into<String>,
+        response: impl Into<RefOr<Response>>,
+    ) -> &mut Self {
+        self.responses
+            .responses
+            .insert(code.into(), response.into());
 
         self
     }
@@ -542,8 +591,13 @@ impl Operation {
     }
 
     /// Append [`SecurityRequirement`] to [`Operation`] security requirements.
-    pub fn securities<R: Into<SecurityRequirement>>(&mut self, securities: impl IntoIterator<Item = R>) -> &mut Self {
-        securities.into_iter().fold(self, |this, s| this.security(s))
+    pub fn securities<R: Into<SecurityRequirement>>(
+        &mut self,
+        securities: impl IntoIterator<Item = R>,
+    ) -> &mut Self {
+        securities
+            .into_iter()
+            .fold(self, |this, s| this.security(s))
     }
 
     /// Append [`Server`]s to the [`Operation`].
@@ -658,7 +712,6 @@ pub enum ParameterIn {
     Cookie,
 }
 
-
 /// Defines how [`Parameter`] should be serialized.
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "debug", derive(Debug))]
@@ -704,17 +757,30 @@ mod tests {
         let paths_list = Paths::builder()
             .path("/todo", PathItem::new(HttpMethod::Get, Operation::new()))
             .path("/todo", PathItem::new(HttpMethod::Post, Operation::new()))
-            .path("/todo/{id}", PathItem::new(HttpMethod::Delete, Operation::new()))
-            .path("/todo/{id}", PathItem::new(HttpMethod::Get, Operation::new()))
-            .path("/todo/{id}", PathItem::new(HttpMethod::Put, Operation::new()))
-            .path("/todo/search", PathItem::new(HttpMethod::Get, Operation::new()))
+            .path(
+                "/todo/{id}",
+                PathItem::new(HttpMethod::Delete, Operation::new()),
+            )
+            .path(
+                "/todo/{id}",
+                PathItem::new(HttpMethod::Get, Operation::new()),
+            )
+            .path(
+                "/todo/{id}",
+                PathItem::new(HttpMethod::Put, Operation::new()),
+            )
+            .path(
+                "/todo/search",
+                PathItem::new(HttpMethod::Get, Operation::new()),
+            )
             .build();
 
         let actual_value = paths_list
             .paths
             .iter()
             .flat_map(|(path, path_item)| {
-                let mut path_methods = Vec::<(&str, &HttpMethod)>::with_capacity(paths_list.paths.len());
+                let mut path_methods =
+                    Vec::<(&str, &HttpMethod)>::with_capacity(paths_list.paths.len());
                 if path_item.get.is_some() {
                     path_methods.push((path, &HttpMethod::Get));
                 }
@@ -780,7 +846,8 @@ mod tests {
 
     #[test]
     fn operation_builder_security() {
-        let security_requirement1 = SecurityRequirement::new("api_oauth2_flow", ["edit:items", "read:items"]);
+        let security_requirement1 =
+            SecurityRequirement::new("api_oauth2_flow", ["edit:items", "read:items"]);
         let security_requirement2 = SecurityRequirement::new("api_oauth2_flow", ["remove:items"]);
         let operation = Operation::builder()
             .security(security_requirement1)

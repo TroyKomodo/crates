@@ -53,7 +53,9 @@ use super::extensions::Extensions;
 ///
 /// [openapi]: ../struct.OpenApi.html
 #[non_exhaustive]
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Default, Clone, PartialEq, Eq, bon::Builder)]
+#[derive(
+    serde_derive::Serialize, serde_derive::Deserialize, Default, Clone, PartialEq, Eq, bon::Builder,
+)]
 #[cfg_attr(feature = "debug", derive(Debug))]
 #[serde(rename_all = "camelCase")]
 #[builder(on(_, into))]
@@ -115,8 +117,14 @@ impl<S: server_builder::State> ServerBuilder<S> {
     ///   `{username}` substitution then the name should be `username`.
     /// * `parameter` Use [`ServerVariableBuilder`] to define how the parameter is being substituted
     ///   within the url.
-    pub fn parameter(mut self, name: impl Into<String>, variable: impl Into<ServerVariable>) -> Self {
-        self.variables.get_or_insert_default().insert(name.into(), variable.into());
+    pub fn parameter(
+        mut self,
+        name: impl Into<String>,
+        variable: impl Into<ServerVariable>,
+    ) -> Self {
+        self.variables
+            .get_or_insert_default()
+            .insert(name.into(), variable.into());
         self
     }
 }
@@ -125,7 +133,9 @@ impl<S: server_builder::State> ServerBuilder<S> {
 ///
 /// [server_variable]: https://spec.openapis.org/oas/latest.html#server-variable-object
 #[non_exhaustive]
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Default, Clone, PartialEq, Eq, bon::Builder)]
+#[derive(
+    serde_derive::Serialize, serde_derive::Deserialize, Default, Clone, PartialEq, Eq, bon::Builder,
+)]
 #[cfg_attr(feature = "debug", derive(Debug))]
 #[builder(on(_, into))]
 pub struct ServerVariable {

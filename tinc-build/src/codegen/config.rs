@@ -37,7 +37,10 @@ impl EnumConfig {
         self.container_attributes.iter()
     }
 
-    pub(crate) fn variant_attributes(&self, variant: &str) -> impl Iterator<Item = &syn::Attribute> {
+    pub(crate) fn variant_attributes(
+        &self,
+        variant: &str,
+    ) -> impl Iterator<Item = &syn::Attribute> {
         self.variant_attributes.get(variant).into_iter().flatten()
     }
 
@@ -50,7 +53,10 @@ impl EnumConfig {
     }
 
     pub(crate) fn variant_attribute(&mut self, variant: &str, attr: syn::Attribute) {
-        self.variant_attributes.entry(variant.to_owned()).or_default().push(attr);
+        self.variant_attributes
+            .entry(variant.to_owned())
+            .or_default()
+            .push(attr);
     }
 }
 
@@ -75,7 +81,9 @@ impl MessageConfig {
     }
 
     pub(crate) fn oneof_configs(&self) -> impl Iterator<Item = (&str, &OneofConfig)> {
-        self.oneof_attributes.iter().map(|(name, config)| (name.as_str(), config))
+        self.oneof_attributes
+            .iter()
+            .map(|(name, config)| (name.as_str(), config))
     }
 
     pub(crate) fn attribute(&mut self, attr: syn::Attribute) {
@@ -83,7 +91,10 @@ impl MessageConfig {
     }
 
     pub(crate) fn field_attribute(&mut self, field: &str, attr: syn::Attribute) {
-        self.field_attributes.entry(field.to_owned()).or_default().push(attr);
+        self.field_attributes
+            .entry(field.to_owned())
+            .or_default()
+            .push(attr);
     }
 
     pub(crate) fn oneof_config(&mut self, oneof: &str) -> &mut OneofConfig {
@@ -115,6 +126,9 @@ impl OneofConfig {
     }
 
     pub(crate) fn field_attribute(&mut self, field: &str, attr: syn::Attribute) {
-        self.field_attributes.entry(field.to_owned()).or_default().push(attr);
+        self.field_attributes
+            .entry(field.to_owned())
+            .or_default()
+            .push(attr);
     }
 }

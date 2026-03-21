@@ -17,4 +17,3 @@ pub fn create(package: &Package) -> anyhow::Result<Content> {
         badge: badge::create(package),
     })
 }
-

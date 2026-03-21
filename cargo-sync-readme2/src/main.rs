@@ -134,8 +134,8 @@ fn main() {
 }
 
 fn load_package(cargo_toml: &Utf8PathBuf, rustdoc_json: Utf8PathBuf) -> anyhow::Result<Package> {
-    let cargo_toml =
-        cargo_toml::Manifest::<ManifestMetadata>::from_path_with_metadata(cargo_toml).context("cargo toml")?;
+    let cargo_toml = cargo_toml::Manifest::<ManifestMetadata>::from_path_with_metadata(cargo_toml)
+        .context("cargo toml")?;
     let pkg = cargo_toml.package();
 
     Ok(Package {
@@ -157,7 +157,8 @@ fn render_readme(package: &Package, readme_path: &Utf8Path) -> anyhow::Result<(S
 
 fn sync(args: SyncArgs) -> anyhow::Result<()> {
     let package = load_package(&args.cargo_toml, args.rustdoc_json)?;
-    let (_, rendered) = render_readme(&package, &args.readme_md).with_context(|| args.readme_md.to_string())?;
+    let (_, rendered) =
+        render_readme(&package, &args.readme_md).with_context(|| args.readme_md.to_string())?;
     std::fs::write(&args.readme_md, rendered).context("write readme")?;
     println!("synced {}", args.readme_md);
     Ok(())
@@ -169,7 +170,8 @@ fn test(args: TestArgs) -> anyhow::Result<()> {
 }
 
 fn test_package(package: &Package, readme_path: &Utf8Path) -> anyhow::Result<()> {
-    let (source, rendered) = render_readme(package, readme_path).with_context(|| readme_path.to_string())?;
+    let (source, rendered) =
+        render_readme(package, readme_path).with_context(|| readme_path.to_string())?;
 
     if rendered == source {
         println!("readme matches render: {}", readme_path);
@@ -224,20 +226,33 @@ fn build_rustdoc_json(packages: &[WorkspacePackage], target_dir: &Utf8Path) -> a
         return Ok(());
     }
 
-    println!("building rustdoc json for {}", packages.iter().map(|p| p.name.clone()).collect::<Vec<_>>().join(", "));
+    println!(
+        "building rustdoc json for {}",
+        packages
+            .iter()
+            .map(|p| p.name.clone())
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
 
     let mut cmd = ProcessCommand::new("cargo");
     cmd.env("RUSTC_BOOTSTRAP", "1")
         .env("RUSTDOCFLAGS", "-Z unstable-options --output-format json")
         .arg("doc")
         .arg("--no-deps")
-        .arg("--target-dir").arg(target_dir);
+        .arg("--target-dir")
+        .arg(target_dir);
 
     let mut features = Vec::new();
 
     for pkg in packages {
         cmd.args(["-p", &pkg.name]);
-        features.extend(pkg.metadata.features.iter().map(|f| format!("{}/{f}", pkg.name)));
+        features.extend(
+            pkg.metadata
+                .features
+                .iter()
+                .map(|f| format!("{}/{f}", pkg.name)),
+        );
     }
 
     if !features.is_empty() {
@@ -267,7 +282,10 @@ fn workspace(args: WorkspaceArgs) -> anyhow::Result<()> {
 
     for pkg in &packages {
         let json_name = pkg.name.replace('-', "_");
-        let rustdoc_json = args.target_dir.join("doc").join(format!("{}.json", json_name));
+        let rustdoc_json = args
+            .target_dir
+            .join("doc")
+            .join(format!("{}.json", json_name));
         let package = load_package(&pkg.manifest_path, rustdoc_json)?;
         let readme_path = pkg.manifest_path.parent().unwrap().join(&pkg.readme_path);
 
@@ -292,7 +310,8 @@ fn workspace(args: WorkspaceArgs) -> anyhow::Result<()> {
 
 fn sync_package(package: &Package, readme_path: &Utf8Path) -> anyhow::Result<()> {
     let readme_path_buf = readme_path.to_path_buf();
-    let (_, rendered) = render_readme(package, &readme_path_buf).with_context(|| readme_path.to_string())?;
+    let (_, rendered) =
+        render_readme(package, &readme_path_buf).with_context(|| readme_path.to_string())?;
     let original = std::fs::read_to_string(readme_path).context("read original readme")?;
     if original == rendered {
         println!("readme is already in sync: {}", readme_path);
@@ -352,4 +371,3 @@ fn diff(old: &str, new: &str) -> String {
 
     output
 }
-

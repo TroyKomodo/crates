@@ -9,8 +9,8 @@ use tinc_pb_prost::http_endpoint_options;
 use super::Package;
 use super::utils::{field_ident_from_str, type_ident_from_str};
 use crate::types::{
-    Comments, ProtoPath, ProtoService, ProtoServiceMethod, ProtoServiceMethodEndpoint, ProtoServiceMethodIo,
-    ProtoTypeRegistry, ProtoValueType,
+    Comments, ProtoPath, ProtoService, ProtoServiceMethod, ProtoServiceMethodEndpoint,
+    ProtoServiceMethodIo, ProtoTypeRegistry, ProtoValueType,
 };
 
 mod openapi;
@@ -35,16 +35,30 @@ impl GeneratedMethod {
         components: &mut openapiv3_1::Components,
     ) -> anyhow::Result<GeneratedMethod> {
         let (http_method_oa, path) = match &endpoint.method {
-            tinc_pb_prost::http_endpoint_options::Method::Get(path) => (openapiv3_1::HttpMethod::Get, path),
-            tinc_pb_prost::http_endpoint_options::Method::Post(path) => (openapiv3_1::HttpMethod::Post, path),
-            tinc_pb_prost::http_endpoint_options::Method::Put(path) => (openapiv3_1::HttpMethod::Put, path),
-            tinc_pb_prost::http_endpoint_options::Method::Delete(path) => (openapiv3_1::HttpMethod::Delete, path),
-            tinc_pb_prost::http_endpoint_options::Method::Patch(path) => (openapiv3_1::HttpMethod::Patch, path),
+            tinc_pb_prost::http_endpoint_options::Method::Get(path) => {
+                (openapiv3_1::HttpMethod::Get, path)
+            }
+            tinc_pb_prost::http_endpoint_options::Method::Post(path) => {
+                (openapiv3_1::HttpMethod::Post, path)
+            }
+            tinc_pb_prost::http_endpoint_options::Method::Put(path) => {
+                (openapiv3_1::HttpMethod::Put, path)
+            }
+            tinc_pb_prost::http_endpoint_options::Method::Delete(path) => {
+                (openapiv3_1::HttpMethod::Delete, path)
+            }
+            tinc_pb_prost::http_endpoint_options::Method::Patch(path) => {
+                (openapiv3_1::HttpMethod::Patch, path)
+            }
         };
 
         let full_path = match (
             path.trim_matches('/'),
-            service.options.prefix.as_deref().map(|p| p.trim_matches('/')),
+            service
+                .options
+                .prefix
+                .as_deref()
+                .map(|p| p.trim_matches('/')),
         ) {
             ("", Some(prefix)) => format!("/{prefix}"),
             (path, None | Some("")) => format!("/{path}"),
@@ -75,25 +89,38 @@ impl GeneratedMethod {
         openapi.parameters(params);
 
         let is_get_or_delete = matches!(http_method_oa, HttpMethod::Get | HttpMethod::Delete);
-        let request = endpoint.request.as_ref().and_then(|req| req.mode.clone()).unwrap_or_else(|| {
-            if is_get_or_delete {
-                http_endpoint_options::request::Mode::Query(http_endpoint_options::request::QueryParams::default())
-            } else {
-                http_endpoint_options::request::Mode::Json(http_endpoint_options::request::JsonBody::default())
-            }
-        });
+        let request = endpoint
+            .request
+            .as_ref()
+            .and_then(|req| req.mode.clone())
+            .unwrap_or_else(|| {
+                if is_get_or_delete {
+                    http_endpoint_options::request::Mode::Query(
+                        http_endpoint_options::request::QueryParams::default(),
+                    )
+                } else {
+                    http_endpoint_options::request::Mode::Json(
+                        http_endpoint_options::request::JsonBody::default(),
+                    )
+                }
+            });
 
         let request_tokens = match request {
-            http_endpoint_options::request::Mode::Query(http_endpoint_options::request::QueryParams { field }) => {
-                let GeneratedParams { tokens, params } = generator.generate_query_parameter(field.as_deref())?;
+            http_endpoint_options::request::Mode::Query(
+                http_endpoint_options::request::QueryParams { field },
+            ) => {
+                let GeneratedParams { tokens, params } =
+                    generator.generate_query_parameter(field.as_deref())?;
                 openapi.parameters(params);
                 tokens
             }
-            http_endpoint_options::request::Mode::Binary(http_endpoint_options::request::BinaryBody {
-                field,
-                content_type_accepts,
-                content_type_field,
-            }) => {
+            http_endpoint_options::request::Mode::Binary(
+                http_endpoint_options::request::BinaryBody {
+                    field,
+                    content_type_accepts,
+                    content_type_field,
+                },
+            ) => {
                 let GeneratedBody { tokens, body } = generator.generate_body(
                     &method.cel,
                     BodyMethod::Binary(content_type_accepts.as_deref()),
@@ -103,23 +130,39 @@ impl GeneratedMethod {
                 openapi.request_body = Some(body);
                 tokens
             }
-            http_endpoint_options::request::Mode::Json(http_endpoint_options::request::JsonBody { field }) => {
-                let GeneratedBody { tokens, body } =
-                    generator.generate_body(&method.cel, BodyMethod::Json, field.as_deref(), None)?;
+            http_endpoint_options::request::Mode::Json(
+                http_endpoint_options::request::JsonBody { field },
+            ) => {
+                let GeneratedBody { tokens, body } = generator.generate_body(
+                    &method.cel,
+                    BodyMethod::Json,
+                    field.as_deref(),
+                    None,
+                )?;
                 openapi.request_body = Some(body);
                 tokens
             }
-            http_endpoint_options::request::Mode::Text(http_endpoint_options::request::TextBody { field }) => {
-                let GeneratedBody { tokens, body } =
-                    generator.generate_body(&method.cel, BodyMethod::Text, field.as_deref(), None)?;
+            http_endpoint_options::request::Mode::Text(
+                http_endpoint_options::request::TextBody { field },
+            ) => {
+                let GeneratedBody { tokens, body } = generator.generate_body(
+                    &method.cel,
+                    BodyMethod::Text,
+                    field.as_deref(),
+                    None,
+                )?;
                 openapi.request_body = Some(body);
                 tokens
             }
         };
 
         let input_path = match &method.input {
-            ProtoServiceMethodIo::Single(input) => types.resolve_rust_path(package, input.proto_path()),
-            ProtoServiceMethodIo::Stream(_) => anyhow::bail!("currently streaming is not supported by tinc methods."),
+            ProtoServiceMethodIo::Single(input) => {
+                types.resolve_rust_path(package, input.proto_path())
+            }
+            ProtoServiceMethodIo::Stream(_) => {
+                anyhow::bail!("currently streaming is not supported by tinc methods.")
+            }
         };
 
         let service_method_name = field_ident_from_str(name);
@@ -128,9 +171,11 @@ impl GeneratedMethod {
             .response
             .as_ref()
             .and_then(|resp| resp.mode.clone())
-            .unwrap_or_else(
-                || http_endpoint_options::response::Mode::Json(http_endpoint_options::response::Json::default()),
-            );
+            .unwrap_or_else(|| {
+                http_endpoint_options::response::Mode::Json(
+                    http_endpoint_options::response::Json::default(),
+                )
+            });
 
         let response_ident = quote::format_ident!("response");
         let builder_ident = quote::format_ident!("builder");
@@ -146,21 +191,23 @@ impl GeneratedMethod {
             body: response,
             tokens: response_tokens,
         } = match response {
-            http_endpoint_options::response::Mode::Binary(http_endpoint_options::response::Binary {
-                field,
-                content_type_accepts,
-                content_type_field,
-            }) => generator.generate_body(
+            http_endpoint_options::response::Mode::Binary(
+                http_endpoint_options::response::Binary {
+                    field,
+                    content_type_accepts,
+                    content_type_field,
+                },
+            ) => generator.generate_body(
                 BodyMethod::Binary(content_type_accepts.as_deref()),
                 field.as_deref(),
                 content_type_field.as_deref(),
             )?,
-            http_endpoint_options::response::Mode::Json(http_endpoint_options::response::Json { field }) => {
-                generator.generate_body(BodyMethod::Json, field.as_deref(), None)?
-            }
-            http_endpoint_options::response::Mode::Text(http_endpoint_options::response::Text { field }) => {
-                generator.generate_body(BodyMethod::Text, field.as_deref(), None)?
-            }
+            http_endpoint_options::response::Mode::Json(
+                http_endpoint_options::response::Json { field },
+            ) => generator.generate_body(BodyMethod::Json, field.as_deref(), None)?,
+            http_endpoint_options::response::Mode::Text(
+                http_endpoint_options::response::Text { field },
+            ) => generator.generate_body(BodyMethod::Text, field.as_deref(), None)?,
         };
 
         openapi.response("200", response);
@@ -331,8 +378,10 @@ pub(super) fn handle_service(
         }
 
         let codec_path = if matches!(method.input.value_type(), ProtoValueType::Message(_)) {
-            let input_path = registry.resolve_rust_path(&package_name, method.input.value_type().proto_path());
-            let output_path = registry.resolve_rust_path(&package_name, method.output.value_type().proto_path());
+            let input_path =
+                registry.resolve_rust_path(&package_name, method.input.value_type().proto_path());
+            let output_path =
+                registry.resolve_rust_path(&package_name, method.output.value_type().proto_path());
             let codec_ident = format_ident!("{method_name}Codec");
             method_codecs.push(quote! {
                 #[derive(Debug, Clone, Default)]
@@ -417,7 +466,9 @@ pub(super) fn handle_service(
         .tags(vec![openapi_tag])
         .build();
 
-    let json_openapi = openapi.to_json().context("invalid openapi schema generation")?;
+    let json_openapi = openapi
+        .to_json()
+        .context("invalid openapi schema generation")?;
 
     package.push_item(parse_quote! {
         /// This module was automatically generated by `tinc`.

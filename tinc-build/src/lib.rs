@@ -150,7 +150,11 @@ impl Config {
     }
 
     /// Compile and generate all the protos with the includes.
-    pub fn compile_protos(&mut self, protos: &[impl AsRef<Path>], includes: &[impl AsRef<Path>]) -> anyhow::Result<()> {
+    pub fn compile_protos(
+        &mut self,
+        protos: &[impl AsRef<Path>],
+        includes: &[impl AsRef<Path>],
+    ) -> anyhow::Result<()> {
         match self.mode {
             #[cfg(feature = "prost")]
             Mode::Prost => self.compile_protos_prost(protos, includes),
@@ -166,7 +170,11 @@ impl Config {
     }
 
     #[cfg(feature = "prost")]
-    fn compile_protos_prost(&mut self, protos: &[impl AsRef<Path>], includes: &[impl AsRef<Path>]) -> anyhow::Result<()> {
+    fn compile_protos_prost(
+        &mut self,
+        protos: &[impl AsRef<Path>],
+        includes: &[impl AsRef<Path>],
+    ) -> anyhow::Result<()> {
         let fd_path = self.out_dir.join("tinc.fd.bin");
 
         let mut config = prost_build::Config::new();
@@ -177,12 +185,17 @@ impl Config {
         {
             let tinc_out = self.out_dir.join("tinc");
             std::fs::create_dir_all(&tinc_out).context("failed to create tinc directory")?;
-            std::fs::write(tinc_out.join("annotations.proto"), tinc_pb_prost::TINC_ANNOTATIONS)
-                .context("failed to write tinc_annotations.rs")?;
+            std::fs::write(
+                tinc_out.join("annotations.proto"),
+                tinc_pb_prost::TINC_ANNOTATIONS,
+            )
+            .context("failed to write tinc_annotations.rs")?;
             includes.push(&self.out_dir);
         }
 
-        config.load_fds(protos, &includes).context("failed to generate tonic fds")?;
+        config
+            .load_fds(protos, &includes)
+            .context("failed to generate tonic fds")?;
         let fds_bytes = std::fs::read(fd_path).context("failed to read tonic fds")?;
         self.load_fds_prost(fds_bytes.as_slice())
     }
@@ -252,78 +265,102 @@ impl Config {
                 });
                 enum_config.variants().for_each(|variant| {
                     let path = format!("{path}.{variant}");
-                    enum_config.variant_attributes(variant).for_each(|attribute| {
-                        config.field_attribute(&path, attribute.to_token_stream().to_string());
-                    });
-                });
-            });
-
-            package.message_configs().for_each(|(path, message_config)| {
-                if self.extern_paths.contains(path) {
-                    return;
-                }
-
-                message_config.attributes().for_each(|attribute| {
-                    config.message_attribute(path, attribute.to_token_stream().to_string());
-                });
-                message_config.fields().for_each(|field| {
-                    let path = format!("{path}.{field}");
-                    message_config.field_attributes(field).for_each(|attribute| {
-                        config.field_attribute(&path, attribute.to_token_stream().to_string());
-                    });
-                });
-                message_config.oneof_configs().for_each(|(field, oneof_config)| {
-                    let path = format!("{path}.{field}");
-                    oneof_config.attributes().for_each(|attribute| {
-                        // In prost oneofs (container) are treated as enums
-                        config.enum_attribute(&path, attribute.to_token_stream().to_string());
-                    });
-                    oneof_config.fields().for_each(|field| {
-                        let path = format!("{path}.{field}");
-                        oneof_config.field_attributes(field).for_each(|attribute| {
+                    enum_config
+                        .variant_attributes(variant)
+                        .for_each(|attribute| {
                             config.field_attribute(&path, attribute.to_token_stream().to_string());
                         });
-                    });
                 });
             });
 
-            package.extra_items.extend(package.services.iter().flat_map(|service| {
-                let mut builder = tonic_build::CodeGenBuilder::new();
-
-                builder.emit_package(true).build_transport(true);
-
-                let make_service = |is_client: bool| {
-                    let mut builder = tonic_build::manual::Service::builder()
-                        .name(service.name())
-                        .package(&service.package);
-
-                    if !service.comments.is_empty() {
-                        builder = builder.comment(service.comments.to_string());
+            package
+                .message_configs()
+                .for_each(|(path, message_config)| {
+                    if self.extern_paths.contains(path) {
+                        return;
                     }
 
-                    service
+                    message_config.attributes().for_each(|attribute| {
+                        config.message_attribute(path, attribute.to_token_stream().to_string());
+                    });
+                    message_config.fields().for_each(|field| {
+                        let path = format!("{path}.{field}");
+                        message_config
+                            .field_attributes(field)
+                            .for_each(|attribute| {
+                                config.field_attribute(
+                                    &path,
+                                    attribute.to_token_stream().to_string(),
+                                );
+                            });
+                    });
+                    message_config
+                        .oneof_configs()
+                        .for_each(|(field, oneof_config)| {
+                            let path = format!("{path}.{field}");
+                            oneof_config.attributes().for_each(|attribute| {
+                                // In prost oneofs (container) are treated as enums
+                                config
+                                    .enum_attribute(&path, attribute.to_token_stream().to_string());
+                            });
+                            oneof_config.fields().for_each(|field| {
+                                let path = format!("{path}.{field}");
+                                oneof_config.field_attributes(field).for_each(|attribute| {
+                                    config.field_attribute(
+                                        &path,
+                                        attribute.to_token_stream().to_string(),
+                                    );
+                                });
+                            });
+                        });
+                });
+
+            package
+                .extra_items
+                .extend(package.services.iter().flat_map(|service| {
+                    let mut builder = tonic_build::CodeGenBuilder::new();
+
+                    builder.emit_package(true).build_transport(true);
+
+                    let make_service = |is_client: bool| {
+                        let mut builder = tonic_build::manual::Service::builder()
+                            .name(service.name())
+                            .package(&service.package);
+
+                        if !service.comments.is_empty() {
+                            builder = builder.comment(service.comments.to_string());
+                        }
+
+                        service
                         .methods
                         .iter()
                         .fold(builder, |service_builder, (name, method)| {
-                            let codec_path =
-                                if let Some(Some(codec_path)) = (!is_client).then_some(method.codec_path.as_ref()) {
-                                    let path = get_common_import_path(&service.full_name, codec_path);
-                                    quote!(#path::<::tinc::reexports::tonic_prost::ProstCodec<_, _>>)
-                                } else {
-                                    quote!(::tinc::reexports::tonic_prost::ProstCodec)
-                                };
+                            let codec_path = if let Some(Some(codec_path)) =
+                                (!is_client).then_some(method.codec_path.as_ref())
+                            {
+                                let path = get_common_import_path(&service.full_name, codec_path);
+                                quote!(#path::<::tinc::reexports::tonic_prost::ProstCodec<_, _>>)
+                            } else {
+                                quote!(::tinc::reexports::tonic_prost::ProstCodec)
+                            };
 
                             let mut builder = tonic_build::manual::Method::builder()
                                 .input_type(
                                     registry
-                                        .resolve_rust_path(&service.full_name, method.input.value_type().proto_path())
+                                        .resolve_rust_path(
+                                            &service.full_name,
+                                            method.input.value_type().proto_path(),
+                                        )
                                         .unwrap()
                                         .to_token_stream()
                                         .to_string(),
                                 )
                                 .output_type(
                                     registry
-                                        .resolve_rust_path(&service.full_name, method.output.value_type().proto_path())
+                                        .resolve_rust_path(
+                                            &service.full_name,
+                                            method.output.value_type().proto_path(),
+                                        )
                                         .unwrap()
                                         .to_token_stream()
                                         .to_string(),
@@ -347,31 +384,35 @@ impl Config {
                             service_builder.method(builder.build())
                         })
                         .build()
-                };
+                    };
 
-                let mut client: syn::ItemMod = syn::parse2(builder.generate_client(&make_service(true), "")).unwrap();
-                client.content.as_mut().unwrap().1.insert(
-                    0,
-                    parse_quote!(
-                        use ::tinc::reexports::tonic;
-                    ),
-                );
+                    let mut client: syn::ItemMod =
+                        syn::parse2(builder.generate_client(&make_service(true), "")).unwrap();
+                    client.content.as_mut().unwrap().1.insert(
+                        0,
+                        parse_quote!(
+                            use ::tinc::reexports::tonic;
+                        ),
+                    );
 
-                let mut server: syn::ItemMod = syn::parse2(builder.generate_server(&make_service(false), "")).unwrap();
-                server.content.as_mut().unwrap().1.insert(
-                    0,
-                    parse_quote!(
-                        use ::tinc::reexports::tonic;
-                    ),
-                );
+                    let mut server: syn::ItemMod =
+                        syn::parse2(builder.generate_server(&make_service(false), "")).unwrap();
+                    server.content.as_mut().unwrap().1.insert(
+                        0,
+                        parse_quote!(
+                            use ::tinc::reexports::tonic;
+                        ),
+                    );
 
-                [client.into(), server.into()]
-            }));
+                    [client.into(), server.into()]
+                }));
         });
 
         for package in packages.keys() {
             match std::fs::remove_file(self.out_dir.join(format!("{package}.rs"))) {
-                Err(err) if err.kind() != ErrorKind::NotFound => return Err(anyhow::anyhow!(err).context("remove")),
+                Err(err) if err.kind() != ErrorKind::NotFound => {
+                    return Err(anyhow::anyhow!(err).context("remove"));
+                }
                 _ => {}
             }
         }
@@ -391,7 +432,8 @@ impl Config {
             };
 
             let path = self.out_dir.join(format!("{package}.rs"));
-            write_module(&path, std::mem::take(&mut module.extra_items)).with_context(|| package.to_owned())?;
+            write_module(&path, std::mem::take(&mut module.extra_items))
+                .with_context(|| package.to_owned())?;
         }
 
         #[derive(Default)]
@@ -434,8 +476,11 @@ impl Config {
             }
 
             let file: syn::File = parse_quote!(#module);
-            std::fs::write(self.out_dir.join("___root_module.rs"), prettyplease::unparse(&file))
-                .context("write root module")?;
+            std::fs::write(
+                self.out_dir.join("___root_module.rs"),
+                prettyplease::unparse(&file),
+            )
+            .context("write root module")?;
         }
 
         Ok(())
@@ -445,7 +490,9 @@ impl Config {
 fn write_module(path: &std::path::Path, module: Vec<syn::Item>) -> anyhow::Result<()> {
     let mut file = match std::fs::read_to_string(path) {
         Ok(content) if !content.is_empty() => syn::parse_file(&content).context("parse")?,
-        Err(err) if err.kind() != ErrorKind::NotFound => return Err(anyhow::anyhow!(err).context("read")),
+        Err(err) if err.kind() != ErrorKind::NotFound => {
+            return Err(anyhow::anyhow!(err).context("read"));
+        }
         _ => syn::File {
             attrs: Vec::new(),
             items: Vec::new(),

@@ -3,7 +3,10 @@
 //! A lof the code was taken from [`utoipa`](https://crates.io/crates/utoipa).
 //!
 //! The main difference is the full JSON Schema 2020-12 Definitions.
-#![cfg_attr(feature = "docs", doc = "\n\nSee the [changelog][changelog] for a full release history.")]
+#![cfg_attr(
+    feature = "docs",
+    doc = "\n\nSee the [changelog][changelog] for a full release history."
+)]
 #![cfg_attr(feature = "docs", doc = "## Feature flags")]
 #![cfg_attr(feature = "docs", doc = document_features::document_features!())]
 //! ## Alternatives
@@ -69,7 +72,9 @@ pub mod xml;
 ///
 /// See more details at <https://spec.openapis.org/oas/latest.html#openapi-object>.
 #[non_exhaustive]
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Default, Clone, PartialEq, bon::Builder)]
+#[derive(
+    serde_derive::Serialize, serde_derive::Deserialize, Default, Clone, PartialEq, bon::Builder,
+)]
 #[cfg_attr(feature = "debug", derive(Debug))]
 #[serde(rename_all = "camelCase")]
 #[builder(on(_, into))]
@@ -227,7 +232,9 @@ impl OpenApi {
             other_components
                 .security_schemes
                 .retain(|name, _| !components.security_schemes.contains_key(name));
-            components.security_schemes.append(&mut other_components.security_schemes);
+            components
+                .security_schemes
+                .append(&mut other_components.security_schemes);
         }
 
         if let Some(other_security) = &mut other.security {
@@ -294,7 +301,11 @@ impl OpenApi {
     /// Only use this method if you need custom path composition for a specific use case.
     ///
     /// `composer` is a function that takes two strings, the base path and the path to nest, and returns the composed path for the API Specification.
-    pub fn nest_with_path_composer<P: Into<String>, O: Into<OpenApi>, F: Fn(&str, &str) -> String>(
+    pub fn nest_with_path_composer<
+        P: Into<String>,
+        O: Into<OpenApi>,
+        F: Fn(&str, &str) -> String,
+    >(
         mut self,
         path: P,
         other: O,
@@ -353,13 +364,19 @@ impl<'de> serde::Deserialize<'de> for OpenApiVersion {
             where
                 E: Error,
             {
-                let version = v.split('.').flat_map(|digit| digit.parse::<i8>()).collect::<Vec<_>>();
+                let version = v
+                    .split('.')
+                    .flat_map(|digit| digit.parse::<i8>())
+                    .collect::<Vec<_>>();
 
                 if version.len() == 3 && version.first() == Some(&3) && version.get(1) == Some(&1) {
                     Ok(OpenApiVersion::Version31)
                 } else {
                     let expected: &dyn Expected = &"3.1.0";
-                    Err(Error::invalid_value(serde::de::Unexpected::Str(&v), expected))
+                    Err(Error::invalid_value(
+                        serde::de::Unexpected::Str(&v),
+                        expected,
+                    ))
                 }
             }
         }
@@ -522,14 +539,16 @@ mod tests {
                         "/api/v1/user",
                         PathItem::new(
                             HttpMethod::Get,
-                            Operation::builder().response("200", Response::new("This will not get added")),
+                            Operation::builder()
+                                .response("200", Response::new("This will not get added")),
                         ),
                     )
                     .path(
                         "/ap/v2/user",
                         PathItem::new(
                             HttpMethod::Get,
-                            Operation::builder().response("200", Response::new("Get user success 2")),
+                            Operation::builder()
+                                .response("200", Response::new("Get user success 2")),
                         ),
                     )
                     .path(
@@ -582,28 +601,32 @@ mod tests {
                         "/api/v1/user",
                         PathItem::new(
                             HttpMethod::Get,
-                            Operation::builder().response("200", Response::new("This will not get added")),
+                            Operation::builder()
+                                .response("200", Response::new("This will not get added")),
                         ),
                     )
                     .path(
                         "/api/v1/user",
                         PathItem::new(
                             HttpMethod::Post,
-                            Operation::builder().response("200", Response::new("Post user success 1")),
+                            Operation::builder()
+                                .response("200", Response::new("Post user success 1")),
                         ),
                     )
                     .path(
                         "/api/v2/user",
                         PathItem::new(
                             HttpMethod::Get,
-                            Operation::builder().response("200", Response::new("Get user success 2")),
+                            Operation::builder()
+                                .response("200", Response::new("Get user success 2")),
                         ),
                     )
                     .path(
                         "/api/v2/user",
                         PathItem::new(
                             HttpMethod::Post,
-                            Operation::builder().response("200", Response::new("Post user success 2")),
+                            Operation::builder()
+                                .response("200", Response::new("Post user success 2")),
                         ),
                     )
                     .extensions(Extensions::from_iter([("x-random", "Value")])),
@@ -630,7 +653,10 @@ mod tests {
         let api = OpenApi::builder()
             .paths(Paths::builder().path(
                 "/api/v1/status",
-                PathItem::new(HttpMethod::Get, Operation::builder().description("Get status")),
+                PathItem::new(
+                    HttpMethod::Get,
+                    Operation::builder().description("Get status"),
+                ),
             ))
             .build();
 
@@ -639,15 +665,23 @@ mod tests {
                 Paths::builder()
                     .path(
                         "/",
-                        PathItem::new(HttpMethod::Get, Operation::builder().description("Get user details").build()),
+                        PathItem::new(
+                            HttpMethod::Get,
+                            Operation::builder().description("Get user details").build(),
+                        ),
                     )
-                    .path("/foo", PathItem::new(HttpMethod::Post, Operation::builder().build())),
+                    .path(
+                        "/foo",
+                        PathItem::new(HttpMethod::Post, Operation::builder().build()),
+                    ),
             )
             .build();
 
         let nest_merged = api.nest("/api/v1/user", user_api);
         let value = serde_json::to_value(nest_merged).expect("should serialize as json");
-        let paths = value.pointer("/paths").expect("paths should exits in openapi");
+        let paths = value
+            .pointer("/paths")
+            .expect("paths should exits in openapi");
 
         assert_json_snapshot!(paths);
     }

@@ -3,7 +3,9 @@ use quote::quote;
 use syn::parse_quote;
 use tinc_cel::CelValue;
 
-use super::{CompileError, CompiledExpr, Compiler, CompilerCtx, ConstantCompiledExpr, RuntimeCompiledExpr};
+use super::{
+    CompileError, CompiledExpr, Compiler, CompilerCtx, ConstantCompiledExpr, RuntimeCompiledExpr,
+};
 use crate::codegen::cel::types::CelType;
 use crate::types::{ProtoModifiedValueType, ProtoType, ProtoValueType};
 
@@ -12,7 +14,9 @@ pub(crate) fn resolve(ctx: &Compiler, expr: &Expression) -> Result<CompiledExpr,
         Expression::And(left, right) => resolve_and(ctx, left, right),
         Expression::Arithmetic(left, op, right) => resolve_arithmetic(ctx, left, op, right),
         Expression::Atom(atom) => resolve_atom(ctx, atom),
-        Expression::FunctionCall(func, this, args) => resolve_function_call(ctx, func, this.as_deref(), args),
+        Expression::FunctionCall(func, this, args) => {
+            resolve_function_call(ctx, func, this.as_deref(), args)
+        }
         Expression::Ident(ident) => resolve_ident(ctx, ident),
         Expression::List(items) => resolve_list(ctx, items),
         Expression::Map(items) => resolve_map(ctx, items),
@@ -24,7 +28,11 @@ pub(crate) fn resolve(ctx: &Compiler, expr: &Expression) -> Result<CompiledExpr,
     }
 }
 
-fn resolve_and(ctx: &Compiler, left: &Expression, right: &Expression) -> Result<CompiledExpr, CompileError> {
+fn resolve_and(
+    ctx: &Compiler,
+    left: &Expression,
+    right: &Expression,
+) -> Result<CompiledExpr, CompileError> {
     let left = ctx.resolve(left)?.into_bool(ctx);
     let right = ctx.resolve(right)?.into_bool(ctx);
     match (left, right) {
@@ -95,8 +103,12 @@ fn resolve_atom(_: &Compiler, atom: &Atom) -> Result<CompiledExpr, CompileError>
         Atom::Int(v) => Ok(CompiledExpr::constant(v)),
         Atom::UInt(v) => Ok(CompiledExpr::constant(v)),
         Atom::Float(v) => Ok(CompiledExpr::constant(v)),
-        Atom::String(v) => Ok(CompiledExpr::constant(tinc_cel::CelValue::String(v.to_string().into()))),
-        Atom::Bytes(v) => Ok(CompiledExpr::constant(tinc_cel::CelValue::Bytes(v.to_vec().into()))),
+        Atom::String(v) => Ok(CompiledExpr::constant(tinc_cel::CelValue::String(
+            v.to_string().into(),
+        ))),
+        Atom::Bytes(v) => Ok(CompiledExpr::constant(tinc_cel::CelValue::Bytes(
+            v.to_vec().into(),
+        ))),
         Atom::Bool(v) => Ok(CompiledExpr::constant(v)),
         Atom::Null => Ok(CompiledExpr::constant(tinc_cel::CelValue::Null)),
     }
@@ -109,7 +121,9 @@ fn resolve_function_call(
     args: &[Expression],
 ) -> Result<CompiledExpr, CompileError> {
     let Expression::Ident(func_name) = func else {
-        return Err(CompileError::UnsupportedFunctionCallIdentifierType(func.clone()));
+        return Err(CompileError::UnsupportedFunctionCallIdentifierType(
+            func.clone(),
+        ));
     };
 
     let Some(func) = ctx.get_function(func_name) else {
@@ -159,7 +173,10 @@ fn resolve_list(ctx: &Compiler, items: &[Expression]) -> Result<CompiledExpr, Co
     }
 }
 
-fn resolve_map(ctx: &Compiler, items: &[(Expression, Expression)]) -> Result<CompiledExpr, CompileError> {
+fn resolve_map(
+    ctx: &Compiler,
+    items: &[(Expression, Expression)],
+) -> Result<CompiledExpr, CompileError> {
     let items = items
         .iter()
         .map(|(key, value)| {
@@ -169,10 +186,9 @@ fn resolve_map(ctx: &Compiler, items: &[(Expression, Expression)]) -> Result<Com
         })
         .collect::<Result<Vec<_>, CompileError>>()?;
 
-    if items
-        .iter()
-        .any(|(key, value)| matches!(key, CompiledExpr::Runtime(_)) || matches!(value, CompiledExpr::Runtime(_)))
-    {
+    if items.iter().any(|(key, value)| {
+        matches!(key, CompiledExpr::Runtime(_)) || matches!(value, CompiledExpr::Runtime(_))
+    }) {
         let items = items.into_iter().map(|(key, value)| quote!((#key, #value)));
         Ok(CompiledExpr::runtime(
             CelType::CelValue,
@@ -198,7 +214,11 @@ fn resolve_map(ctx: &Compiler, items: &[(Expression, Expression)]) -> Result<Com
     }
 }
 
-fn resolve_member(ctx: &Compiler, expr: &Expression, member: &Member) -> Result<CompiledExpr, CompileError> {
+fn resolve_member(
+    ctx: &Compiler,
+    expr: &Expression,
+    member: &Member,
+) -> Result<CompiledExpr, CompileError> {
     let expr = ctx.resolve(expr)?;
     match member {
         Member::Attribute(attr) => {
@@ -219,19 +239,25 @@ fn resolve_member(ctx: &Compiler, expr: &Expression, member: &Member) -> Result<
                 CompiledExpr::Runtime(RuntimeCompiledExpr {
                     expr,
                     ty:
-                        ty @ CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Optional(ProtoValueType::Message(
-                            full_name,
-                        )))),
+                        ty @ CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Optional(
+                            ProtoValueType::Message(full_name),
+                        ))),
                 }) => {
                     let msg = ctx
                         .registry()
                         .get_message(full_name)
                         .ok_or_else(|| CompileError::MissingMessage(full_name.clone()))?;
 
-                    let field_ty = msg.fields.get(attr).ok_or_else(|| CompileError::MemberAccess {
-                        ty: Box::new(ty.clone()),
-                        message: format!("message {} does not have field {}", msg.full_name, attr),
-                    })?;
+                    let field_ty =
+                        msg.fields
+                            .get(attr)
+                            .ok_or_else(|| CompileError::MemberAccess {
+                                ty: Box::new(ty.clone()),
+                                message: format!(
+                                    "message {} does not have field {}",
+                                    msg.full_name, attr
+                                ),
+                            })?;
 
                     let field_ident = field_ty.rust_ident();
 
@@ -250,12 +276,20 @@ fn resolve_member(ctx: &Compiler, expr: &Expression, member: &Member) -> Result<
                 }
                 CompiledExpr::Runtime(RuntimeCompiledExpr {
                     expr,
-                    ty: ty @ CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::OneOf(oneof))),
+                    ty:
+                        ty @ CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::OneOf(oneof))),
                 }) => {
-                    let field_ty = oneof.fields.get(attr).ok_or_else(|| CompileError::MemberAccess {
-                        ty: Box::new(ty.clone()),
-                        message: format!("oneof {} does not have field {}", oneof.full_name, attr),
-                    })?;
+                    let field_ty =
+                        oneof
+                            .fields
+                            .get(attr)
+                            .ok_or_else(|| CompileError::MemberAccess {
+                                ty: Box::new(ty.clone()),
+                                message: format!(
+                                    "oneof {} does not have field {}",
+                                    oneof.full_name, attr
+                                ),
+                            })?;
 
                     let field_ident = field_ty.rust_ident();
 
@@ -280,10 +314,16 @@ fn resolve_member(ctx: &Compiler, expr: &Expression, member: &Member) -> Result<
                         .registry()
                         .get_message(full_name)
                         .ok_or_else(|| CompileError::MissingMessage(full_name.clone()))?;
-                    let field_ty = msg.fields.get(attr).ok_or_else(|| CompileError::MemberAccess {
-                        ty: Box::new(ty.clone()),
-                        message: format!("message {} does not have field {}", msg.full_name, attr),
-                    })?;
+                    let field_ty =
+                        msg.fields
+                            .get(attr)
+                            .ok_or_else(|| CompileError::MemberAccess {
+                                ty: Box::new(ty.clone()),
+                                message: format!(
+                                    "message {} does not have field {}",
+                                    msg.full_name, attr
+                                ),
+                            })?;
 
                     let field_ident = field_ty.rust_ident();
 
@@ -296,7 +336,11 @@ fn resolve_member(ctx: &Compiler, expr: &Expression, member: &Member) -> Result<
                 }
                 CompiledExpr::Runtime(RuntimeCompiledExpr {
                     expr,
-                    ty: CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Map(ProtoValueType::String, value_ty))),
+                    ty:
+                        CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Map(
+                            ProtoValueType::String,
+                            value_ty,
+                        ))),
                 }) => Ok(CompiledExpr::runtime(
                     CelType::Proto(ProtoType::Value(value_ty.clone())),
                     parse_quote! {
@@ -306,13 +350,16 @@ fn resolve_member(ctx: &Compiler, expr: &Expression, member: &Member) -> Result<
                         )?
                     },
                 )),
-                CompiledExpr::Runtime(RuntimeCompiledExpr { ty, .. }) => Err(CompileError::MemberAccess {
-                    ty: Box::new(ty.clone()),
-                    message: "can only access attributes on messages and maps with string keys".to_string(),
-                }),
-                CompiledExpr::Constant(ConstantCompiledExpr { value: container }) => {
-                    Ok(CompiledExpr::constant(tinc_cel::CelValue::cel_access(container, attr)?))
+                CompiledExpr::Runtime(RuntimeCompiledExpr { ty, .. }) => {
+                    Err(CompileError::MemberAccess {
+                        ty: Box::new(ty.clone()),
+                        message: "can only access attributes on messages and maps with string keys"
+                            .to_string(),
+                    })
                 }
+                CompiledExpr::Constant(ConstantCompiledExpr { value: container }) => Ok(
+                    CompiledExpr::constant(tinc_cel::CelValue::cel_access(container, attr)?),
+                ),
             }
         }
         Member::Index(idx) => {
@@ -320,20 +367,26 @@ fn resolve_member(ctx: &Compiler, expr: &Expression, member: &Member) -> Result<
             match (expr, idx) {
                 (
                     expr @ CompiledExpr::Runtime(RuntimeCompiledExpr {
-                        ty: CelType::CelValue, ..
+                        ty: CelType::CelValue,
+                        ..
                     }),
                     idx,
                 )
-                | (expr @ CompiledExpr::Constant(_), idx @ CompiledExpr::Runtime(_)) => Ok(CompiledExpr::runtime(
-                    CelType::CelValue,
-                    parse_quote! {
-                        ::tinc::__private::cel::CelValue::cel_access(#expr, #idx)?
-                    },
-                )),
+                | (expr @ CompiledExpr::Constant(_), idx @ CompiledExpr::Runtime(_)) => {
+                    Ok(CompiledExpr::runtime(
+                        CelType::CelValue,
+                        parse_quote! {
+                            ::tinc::__private::cel::CelValue::cel_access(#expr, #idx)?
+                        },
+                    ))
+                }
                 (
                     CompiledExpr::Runtime(RuntimeCompiledExpr {
                         expr,
-                        ty: CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Repeated(item_ty))),
+                        ty:
+                            CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Repeated(
+                                item_ty,
+                            ))),
                     }),
                     idx,
                 ) => Ok(CompiledExpr::runtime(
@@ -348,7 +401,11 @@ fn resolve_member(ctx: &Compiler, expr: &Expression, member: &Member) -> Result<
                 (
                     CompiledExpr::Runtime(RuntimeCompiledExpr {
                         expr,
-                        ty: CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Map(_, value_ty))),
+                        ty:
+                            CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Map(
+                                _,
+                                value_ty,
+                            ))),
                     }),
                     idx,
                 ) => Ok(CompiledExpr::runtime(
@@ -360,21 +417,29 @@ fn resolve_member(ctx: &Compiler, expr: &Expression, member: &Member) -> Result<
                         )?
                     },
                 )),
-                (CompiledExpr::Runtime(RuntimeCompiledExpr { ty, .. }), _) => Err(CompileError::MemberAccess {
-                    ty: Box::new(ty.clone()),
-                    message: "cannot index into non-repeated and non-map values".to_string(),
-                }),
+                (CompiledExpr::Runtime(RuntimeCompiledExpr { ty, .. }), _) => {
+                    Err(CompileError::MemberAccess {
+                        ty: Box::new(ty.clone()),
+                        message: "cannot index into non-repeated and non-map values".to_string(),
+                    })
+                }
                 (
                     CompiledExpr::Constant(ConstantCompiledExpr { value: container }),
                     CompiledExpr::Constant(ConstantCompiledExpr { value: idx }),
-                ) => Ok(CompiledExpr::constant(tinc_cel::CelValue::cel_access(container, idx)?)),
+                ) => Ok(CompiledExpr::constant(tinc_cel::CelValue::cel_access(
+                    container, idx,
+                )?)),
             }
         }
         Member::Fields(_) => Err(CompileError::NotImplemented),
     }
 }
 
-fn resolve_or(ctx: &Compiler, left: &Expression, right: &Expression) -> Result<CompiledExpr, CompileError> {
+fn resolve_or(
+    ctx: &Compiler,
+    left: &Expression,
+    right: &Expression,
+) -> Result<CompiledExpr, CompileError> {
     let left = ctx.resolve(left)?.into_bool(ctx);
     let right = ctx.resolve(right)?.into_bool(ctx);
     match (left, right) {
@@ -423,7 +488,9 @@ fn resolve_relation(
             CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Repeated(_))) => {
                 quote! { array_contains }
             }
-            CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Map(_, _))) => quote! { map_contains },
+            CelType::Proto(ProtoType::Modified(ProtoModifiedValueType::Map(_, _))) => {
+                quote! { map_contains }
+            }
             _ => unreachable!(),
         };
 
@@ -448,7 +515,9 @@ fn resolve_relation(
             RelationOp::LessThan => Ok(CompiledExpr::constant(CelValue::cel_lt(left, right)?)),
             RelationOp::LessThanEq => Ok(CompiledExpr::constant(CelValue::cel_lte(left, right)?)),
             RelationOp::GreaterThan => Ok(CompiledExpr::constant(CelValue::cel_gt(left, right)?)),
-            RelationOp::GreaterThanEq => Ok(CompiledExpr::constant(CelValue::cel_gte(left, right)?)),
+            RelationOp::GreaterThanEq => {
+                Ok(CompiledExpr::constant(CelValue::cel_gte(left, right)?))
+            }
             RelationOp::Equals => Ok(CompiledExpr::constant(CelValue::cel_eq(left, right)?)),
             RelationOp::NotEquals => Ok(CompiledExpr::constant(CelValue::cel_neq(left, right)?)),
             RelationOp::In => Ok(CompiledExpr::constant(CelValue::cel_in(left, right)?)),
@@ -508,13 +577,19 @@ fn resolve_ternary(
     }
 }
 
-fn resolve_unary(ctx: &Compiler, op: &cel_parser::UnaryOp, expr: &Expression) -> Result<CompiledExpr, CompileError> {
+fn resolve_unary(
+    ctx: &Compiler,
+    op: &cel_parser::UnaryOp,
+    expr: &Expression,
+) -> Result<CompiledExpr, CompileError> {
     let expr = ctx.resolve(expr)?;
     match op {
         cel_parser::UnaryOp::Not => {
             let expr = expr.into_bool(ctx);
             match expr {
-                CompiledExpr::Constant(ConstantCompiledExpr { value: expr }) => Ok(CompiledExpr::constant(!expr.to_bool())),
+                CompiledExpr::Constant(ConstantCompiledExpr { value: expr }) => {
+                    Ok(CompiledExpr::constant(!expr.to_bool()))
+                }
                 expr => Ok(CompiledExpr::runtime(
                     CelType::Proto(ProtoType::Value(ProtoValueType::Bool)),
                     parse_quote! {
@@ -555,7 +630,11 @@ mod tests {
 
     #[test]
     fn test_resolve_atom_int() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
         let expr = parse_cel("1").unwrap();
         insta::assert_debug_snapshot!(resolve(&compiler, &expr), @r"
@@ -575,7 +654,11 @@ mod tests {
 
     #[test]
     fn test_resolve_atom_uint() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
         let expr = parse_cel("3u").unwrap();
         insta::assert_debug_snapshot!(resolve(&compiler, &expr), @r"
@@ -595,7 +678,11 @@ mod tests {
 
     #[test]
     fn test_resolve_atom_float() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
         let expr = parse_cel("1.23").unwrap();
         insta::assert_debug_snapshot!(resolve(&compiler, &expr), @r"
@@ -615,7 +702,11 @@ mod tests {
 
     #[test]
     fn test_resolve_atom_string_bytes_bool_null() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
         let expr_str = parse_cel("\"foo\"").unwrap();
@@ -675,7 +766,11 @@ mod tests {
 
     #[test]
     fn test_resolve_arithmetic_constant() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
         let expr = parse_cel("10 + 5").unwrap();
@@ -756,7 +851,11 @@ mod tests {
 
     #[test]
     fn test_resolve_relation_constant() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
         let expr = parse_cel("1 < 2").unwrap();
@@ -847,7 +946,11 @@ mod tests {
 
     #[test]
     fn test_resolve_boolean_constant() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
         let expr_and = parse_cel("true && false").unwrap();
@@ -879,7 +982,11 @@ mod tests {
 
     #[test]
     fn test_resolve_unary_constant() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
         let expr_not = parse_cel("!false").unwrap();
@@ -941,7 +1048,11 @@ mod tests {
 
     #[test]
     fn test_resolve_ternary_constant() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
         let expr_true = parse_cel("true ? 1 : 2").unwrap();
@@ -977,7 +1088,11 @@ mod tests {
 
     #[test]
     fn test_resolve_list_map_constant() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
         let expr_list = parse_cel("[1, 2, 3]").unwrap();
@@ -1050,7 +1165,11 @@ mod tests {
 
     #[test]
     fn test_resolve_negative_variable() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let mut compiler = Compiler::new(&registry);
 
         compiler.add_variable("x", CompiledExpr::constant(CelValue::Number(1.into())));
@@ -1073,7 +1192,11 @@ mod tests {
 
     #[test]
     fn test_resolve_access() {
-        let registry = ProtoTypeRegistry::new(crate::Mode::Prost, ExternPaths::new(crate::Mode::Prost), PathSet::default());
+        let registry = ProtoTypeRegistry::new(
+            crate::Mode::Prost,
+            ExternPaths::new(crate::Mode::Prost),
+            PathSet::default(),
+        );
         let compiler = Compiler::new(&registry);
 
         let expr_list = parse_cel("[1, 2, 3][2]").unwrap();

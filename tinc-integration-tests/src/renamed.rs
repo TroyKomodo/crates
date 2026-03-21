@@ -25,7 +25,8 @@ macro_rules! create_rename_test {
 
 #[test]
 fn test_screaming_snake_case() {
-    let (state, value, tracker) = create_rename_test!(pb::ScreamingSnakeCaseMessage, "MY_CUSTOM_FIELD");
+    let (state, value, tracker) =
+        create_rename_test!(pb::ScreamingSnakeCaseMessage, "MY_CUSTOM_FIELD");
     insta::assert_debug_snapshot!(state, @r"
     TrackerSharedState {
         fail_fast: false,
@@ -205,7 +206,8 @@ fn test_kebab_case() {
 
 #[test]
 fn test_screaming_kebab_case() {
-    let (state, value, tracker) = create_rename_test!(pb::ScreamingKebabCaseMessage, "MY-CUSTOM-FIELD");
+    let (state, value, tracker) =
+        create_rename_test!(pb::ScreamingKebabCaseMessage, "MY-CUSTOM-FIELD");
     insta::assert_debug_snapshot!(state, @r"
     TrackerSharedState {
         fail_fast: false,

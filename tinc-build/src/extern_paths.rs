@@ -30,8 +30,14 @@ impl ExternPaths {
     pub(crate) fn new(mode: Mode) -> Self {
         let mut paths = BTreeMap::new();
 
-        paths.insert(ProtoPath::new("google.protobuf"), parse_quote!(::tinc::well_known::#mode));
-        paths.insert(ProtoPath::new("tinc"), parse_quote!(::tinc::well_known::#mode::tinc));
+        paths.insert(
+            ProtoPath::new("google.protobuf"),
+            parse_quote!(::tinc::well_known::#mode),
+        );
+        paths.insert(
+            ProtoPath::new("tinc"),
+            parse_quote!(::tinc::well_known::#mode::tinc),
+        );
 
         Self { paths }
     }
@@ -44,7 +50,10 @@ impl ExternPaths {
         for (idx, _) in path.rmatch_indices('.') {
             if let Some(rust_path) = self.paths.get(&path[..idx]) {
                 let mut segments = path[idx + 1..].split('.');
-                let ident_type = segments.next_back().map(to_upper_camel).map(type_ident_from_str);
+                let ident_type = segments
+                    .next_back()
+                    .map(to_upper_camel)
+                    .map(type_ident_from_str);
                 let segments = segments.map(field_ident_from_str).chain(ident_type);
 
                 return Some(parse_quote!(

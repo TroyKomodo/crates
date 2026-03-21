@@ -14,9 +14,14 @@ pub(crate) fn get_common_import_path(package: &str, end: &str) -> syn::Path {
     let start_parts: Vec<&str> = package.split('.').collect();
     let mut end_parts: Vec<&str> = end.split('.').collect();
 
-    let end_part = type_ident_from_str(end_parts.pop().expect("end path must not be empty")).to_string();
+    let end_part =
+        type_ident_from_str(end_parts.pop().expect("end path must not be empty")).to_string();
 
-    let common_len = start_parts.iter().zip(&end_parts).take_while(|(a, b)| a == b).count();
+    let common_len = start_parts
+        .iter()
+        .zip(&end_parts)
+        .take_while(|(a, b)| a == b)
+        .count();
 
     let num_supers = start_parts.len().saturating_sub(common_len);
 
@@ -45,19 +50,36 @@ mod tests {
     #[test]
     fn test_get_common_import_path() {
         assert_eq!(
-            get_common_import_path("a.b.c", "a.b.d").to_token_stream().to_string(),
-            syn::parse_str::<syn::Path>("super::D").unwrap().to_token_stream().to_string()
+            get_common_import_path("a.b.c", "a.b.d")
+                .to_token_stream()
+                .to_string(),
+            syn::parse_str::<syn::Path>("super::D")
+                .unwrap()
+                .to_token_stream()
+                .to_string()
         );
         assert_eq!(
-            get_common_import_path("a.b.c", "a.b.c.d").to_token_stream().to_string(),
-            syn::parse_str::<syn::Path>("D").unwrap().to_token_stream().to_string()
+            get_common_import_path("a.b.c", "a.b.c.d")
+                .to_token_stream()
+                .to_string(),
+            syn::parse_str::<syn::Path>("D")
+                .unwrap()
+                .to_token_stream()
+                .to_string()
         );
         assert_eq!(
-            get_common_import_path("a.b.c", "a.b.c").to_token_stream().to_string(),
-            syn::parse_str::<syn::Path>("super::C").unwrap().to_token_stream().to_string()
+            get_common_import_path("a.b.c", "a.b.c")
+                .to_token_stream()
+                .to_string(),
+            syn::parse_str::<syn::Path>("super::C")
+                .unwrap()
+                .to_token_stream()
+                .to_string()
         );
         assert_eq!(
-            get_common_import_path("a.b.c", "a.b").to_token_stream().to_string(),
+            get_common_import_path("a.b.c", "a.b")
+                .to_token_stream()
+                .to_string(),
             syn::parse_str::<syn::Path>("super::super::B")
                 .unwrap()
                 .to_token_stream()
